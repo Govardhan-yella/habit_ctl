@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>seed</title>
+  <style>
+    body { font-family: monospace; padding: 40px; background: #1a1b26; color: #a9b1d6; }
+    .done { color: #9ece6a; font-size: 16px; }
+    .hint { color: #7aa2f7; margin-top: 16px; }
+    button { padding: 10px 20px; background: #2f8f7a; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: monospace; font-size: 14px; margin: 6px 0; }
+    button:hover { background: #3bb08b; }
+    .fail { color: #f7768e; }
+    pre { background: #16161e; padding: 12px; border-radius: 4px; margin-top: 12px; font-size: 12px; border: 1px solid #333; white-space: pre-wrap; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>habitctl - Seed Sample Data</h1>
+  <p>Seeds 3 demo habits with multi-day check-in history so streaks and heatmap are visible.</p>
+  <button onclick="seed()">Seed sample data</button>
+  <div id="output" style="margin-top:12px"></div>
+  <pre id="debug" style="display:none"></pre>
+
+  <script>
+    var DB_NAME = 'habitctl';
+    var DB_VERSION = 1;
+
+    function openDB() {
+      return new Promise(function(resolve, reject) {
+        var req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = function(e) {
+          var db = e.target.result;
+          if (!db.objectStoreNames.contains('habits')) {
+            var h = db.createObjectStore('habits', { keyPath: 'id' });
+            h.createIndex('routineId', 'routineId');
+            h.createIndex('archived', 'archived_at');
+          }
+          if (!db.objectStoreNames.contains('routines')) {
+            db.createObjectStore('routines', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains('checkins')) {
+            var c = db.createObjectStore('checkins', { keyPath: 'id' });
+            c.createIndex('habitDate', ['habit_id', 'date']);
+            c.createIndex('habitId', 'habit_id');
+          }
+          if (!db.objectStoreNames.contains('streaks')) {
+            db.createObjectStore('streaks', { keyPath: 'habit_id' });
+          }
+          if (!db.objectStoreNames.contains('progress')) {
+            db.createObjectStore('progress', { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = function() { resolve(req.result); };
+        req.onerror = function() { reject(req.error); };
+      });
+    }
+
+    function prevDate(dateStr) {
+      var d = new Date(dateStr + 'T12:00:00.000Z');
+      d.setUTCDate(d.getUTCDate() - 1);
+      return d.toISOString().slice(0, 10);
+    }
+
+    async function seed() {
+      var output = document.getElementById('output');
+      var debug = document.getElementById('debug');
+      output.innerHTML = 'Opening database...';
+
+      try {
+        var db = await openDB();
+        debug.style.display = 'block';
+        debug.textContent = 'DB opened';
+
+        // Check existing
+        var existing = await new Promise(function(r) {
+          var tx0 = db.transaction('habits', 'readonly');
+          var x = tx0.objectStore('habits').getAll();
+          x.onsuccess = function() { r(x.result); };
+        });
+        if (existing.some(function(h) { return h.name === 'Morning standup'; })) {
+          output.innerHTML = '<span class="done">Already seeded - "Morning standup" exists. Refresh habitctl.</span>';
+          return;
+        }
+
+        var today = new Date();
+        var habitId = crypto.randomUUID();
+
+        // Morning standup - checkbox, 10-day streak
+        var tx1 = db.transaction('habits', 'readwrite');
+        tx1.objectStore('habits').put({
+          id: habitId,
+          name: 'Morning standup',
+          mode: 'checkbox',
+          icon: '\u2600\ufe0f',
+          color: '#fc6c26',
+          created_at: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 10).toISOString(),
+        });
+
+        var checkIns1 = [];
+        for (var i = 9; i >= 0; i--) {
+          var d = new Date(today);
+          d.setDate(d.getDate() - i);
+          checkIns1.push({
+            id: crypto.randomUUID(),
+            habit_id: habitId,
+            date: d.toISOString().slice(0, 10),
+            completed: true,
+            timestamp: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 0, 0).toISOString(),
+          });
+        }
+
+        await new Promise(function(resolve, reject) {
+          var tx = db.transaction(['checkins', 'streaks'], 'readwrite');
+          checkIns1.forEach(function(ci) { tx.objectStore('checkins').put(ci); });
+          tx.objectStore('streaks').put({
+            habit_id: habitId, current: 10, longest: 10,
+            last_date: checkIns1[9].date, shield_dates: [], vacation_until: undefined,
+          });
+          tx.oncomplete = resolve;
+          tx.onerror = function(e) { debug.textContent = 'ERROR habit1: ' + e.target.error; reject(e); };
+        });
+        debug.textContent = 'Habit 1 done';
+
+        // Pushups - counter, 6-day
+        var cid2 = crypto.randomUUID();
+        var tx2 = db.transaction('habits', 'readwrite');
+        tx2.objectStore('habits').put({
+          id: cid2, name: 'Pushups', mode: 'counter', icon: '\uD83D\uDC4A', color: '#7aa2f7',
+          created_at: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6).toISOString(),
+        });
+
+        var ci2 = [];
+        for (var i = 5; i >= 0; i--) {
+          var d2 = new Date(today);
+          d2.setDate(d2.getDate() - i);
+          ci2.push({
+            id: crypto.randomUUID(), habit_id: cid2,
+            date: d2.toISOString().slice(0, 10), completed: true,
+            value: 20 + Math.floor(Math.random() * 30),
+            timestamp: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 18, 0, 0).toISOString(),
+          });
+        }
+
+        await new Promise(function(resolve, reject) {
+          var tx2 = db.transaction(['checkins', 'streaks'], 'readwrite');
+          ci2.forEach(function(c) { tx2.objectStore('checkins').put(c); });
+          tx2.objectStore('streaks').put({
+            habit_id: cid2, current: 6, longest: 6,
+            last_date: ci2[5].date, shield_dates: [], vacation_until: undefined,
+          });
+          tx2.oncomplete = resolve;
+          tx2.onerror = function(e) { debug.textContent = 'ERROR habit2: ' + e.target.error; reject(e); };
+        });
+        debug.textContent = 'Habit 2 done';
+
+        // Water intake - number, 5-day
+        var cid3 = crypto.randomUUID();
+        var tx3 = db.transaction('habits', 'readwrite');
+        tx3.objectStore('habits').put({
+          id: cid3, name: 'Water intake', mode: 'number', icon: '\uD83D\uDC44', color: '#7fc7f8', target: 2000,
+          created_at: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5).toISOString(),
+        });
+
+        var ci3 = [];
+        for (var i = 4; i >= 0; i--) {
+          var d3 = new Date(today);
+          d3.setDate(d3.getDate() - i);
+          ci3.push({
+            id: crypto.randomUUID(), habit_id: cid3,
+            date: d3.toISOString().slice(0, 10), completed: true,
+            value: 1500 + Math.floor(Math.random() * 1000),
+            timestamp: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 20, 0, 0).toISOString(),
+          });
+        }
+
+        await new Promise(function(resolve, reject) {
+          var tx3 = db.transaction(['checkins', 'streaks'], 'readwrite');
+          ci3.forEach(function(c) { tx3.objectStore('checkins').put(c); });
+          tx3.objectStore('streaks').put({
+            habit_id: cid3, current: 5, longest: 5,
+            last_date: ci3[4].date, shield_dates: [], vacation_until: undefined,
+          });
+          tx3.oncomplete = resolve;
+          tx3.onerror = function(e) { debug.textContent = 'ERROR habit3: ' + e.target.error; reject(e); };
+        });
+
+        output.innerHTML = '<span class="done">Seeded 3 habits:</span>'
+          + '<pre>* Morning standup - 10-day streak (checkbox)\n'
+          + '* Pushups - 6-day streak (counter)\n'
+          + '* Water intake - 5-day streak (number, target 2000)</pre>'
+          + '<div class="hint">Refresh <a href="/" style="color:#7aa2f7">localhost:3000</a></div>';
+      } catch (err) {
+        output.innerHTML = '<span class="fail">Error: ' + err.message + '</span>';
+        debug.textContent = err.stack || err.message;
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>

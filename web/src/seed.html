@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title="habitctl Seed — Done">
+  <style>
+    body { font-family: monospace; padding: 40px; background: #1a1b26; color: #a9b1d6; }
+    .done { color: #9ece6a; font-size: 16px; }
+    .hint { color: #7aa2f7; margin-top: 16px; }
+    button { padding: 10px 20px; background: #2f8f7a; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: monospace; font-size: 14px; margin: 6px 0; }
+    button:hover { background: #3bb08b; }
+    .fail { color: #f7768e; }
+    pre { background: #16161e; padding: 12px; border-radius: 4px; margin-top: 12px; font-size: 12px; border: 1px solid #333; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>habitctl — Seed Sample Data</h1>
+  <p>Seeds 3 demo habits with multi-day check-in history so streaks and heatmap are visible.</p>
+  <button onclick="seed()">Seed sample data</button>
+  <div id="output" style="margin-top:12px"></div>
+  <pre id="debug" style="display:none"></pre>
+
+  <script>
+    const DB_NAME = 'habitctl';
+    const DB_VERSION = 1;
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = (e.target).result;
+          if (!db.objectStoreNames.contains('habits')) {
+            const h = db.createObjectStore('habits', { keyPath: 'id' });
+            h.createIndex('routineId', 'routineId');
+            h.createIndex('archived', 'archived_at');
+          }
+          if (!db.objectStoreNames.contains('routines')) {
+            db.createObjectStore('routines', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains('checkins')) {
+            const c = db.createObjectStore('checkins', { keyPath: 'id' });
+            c.createIndex('habitDate', ['habit_id', 'date']);
+            c.createIndex('habitId', 'habit_id');
+          }
+          if (!db.objectStoreNames.contains('streaks')) {
+            db.createObjectStore('streaks', { keyPath: 'habit_id' });
+          }
+          if (!db.objectStoreNames.contains('progress')) {
+            db.createObjectStore('progress', { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function uuid() { return crypto.randomUUID(); }
+
+    async function seed() {
+      const output = document.getElementById('output');
+      const debug = document.getElementById('debug');
+      output.innerHTML = '<span style="color:#7aa2f7">Opening database...</span>';
+
+      try {
+        const db = await openDB();
+        debug.textContent = 'DB opened';
+
+        // Check existing
+        const existing = await new Promise((resolve) => {
+          const req = db.objectStore('habits').getAll();
+          req.onsuccess = () => resolve(req.result);
+        });
+        debug.textContent = `Found ${existing.length} existing habits`;
+
+        if (existing.some((h) => h.name === 'Morning standup')) {
+          output.innerHTML = '<span class="done">✓ Already seeded — "Morning standup" exists. Refresh <a href="/" style="color:#7aa2f7">habitctl</a> to see it.</span>';
+          return;
+        }
+
+        const today = new Date();
+
+        // ── Morning standup: checkbox, 10-day streak ──
+        const habitId = uuid();
+        db.objectStore('habits').put({
+          id: habitId, name: 'Morning standup', mode: 'checkbox', icon: '☀️', color: '#fc6c26',
+          created_at: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 10).toISOString(),
+        });
+        debug.textContent = 'Habit 1 created';
+
+        const checkIns1 = [];
+        for (let i = 9; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          checkIns1.push({
+            id: uuid(), habit_id: habitId,
+            date: d.toISOString().slice(0, 10), completed: true,
+            timestamp: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 0, 0).toISOString(),
+          });
+        }
+
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(['checkins', 'streaks'], 'readwrite');
+          checkIns1.forEach(ci => tx.objectStore('checkins').put(ci));
+          tx.objectStore('streaks').put({
+            habit_id: habitId, current: 10, longest: 10,
+            last_date: checkIns1[9].date, shield_dates: [], vacation_until: undefined,
+          });
+          tx.oncomplete = () => { debug.textContent = 'Habit 1 check-ins + streak written'; resolve(); };
+          tx.onerror = (e) => { debug.textContent = 'ERROR habit 1: ' + e.target.error; reject(e); };
+        });
+
+        // ── Pushups: counter, 6-day streak ──
+        const cid2 = uuid();
+        db.objectStore('habits').put({
+          id: cid2, name: 'Pushups', mode: 'counter', icon: '💪', color: '#7aa2f7',
+          created_at: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6).toISOString(),
+        });
+
+        const checkIns2 = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          checkIns2.push({
+            id: uuid(), habit_id: cid2,
+            date: d.toISOString().slice(0, 10), completed: true,
+            value: 20 + Math.floor(Math.random() * 30),
+            timestamp: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 18, 0, 0).toISOString(),
+          });
+        }
+
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(['checkins', 'streaks'], 'readwrite');
+          checkIns2.forEach(ci => tx.objectStore('checkins').put(ci));
+          tx.objectStore('streaks').put({
+            habit_id: cid2, current: 6, longest: 6,
+            last_date: checkIns2[5].date, shield_dates: [], vacation_until: undefined,
+          });
+          tx.oncomplete = () => { debug.textContent = 'Habit 2 written'; resolve(); };
+          tx.onerror = (e) => { debug.textContent = 'ERROR habit 2: ' + e.target.error; reject(e); };
+        });
+
+        // ── Water intake: number, 5-day streak ──
+        const cid3 = uuid();
+        db.objectStore('habits').put({
+          id: cid3, name: 'Water intake', mode: 'number', icon: '💧', color: '#7fc7f8',
+          target: 2000,
+          created_at: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5).toISOString(),
+        });
+
+        const checkIns3 = [];
+        for (let i = 4; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          checkIns3.push({
+            id: uuid(), habit_id: cid3,
+            date: d.toISOString().slice(0, 10), completed: true,
+            value: 1500 + Math.floor(Math.random() * 1000),
+            timestamp: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 20, 0, 0).toISOString(),
+          });
+        }
+
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(['checkins', 'streaks'], 'readwrite');
+          checkIns3.forEach(ci => tx.objectStore('checkins').put(ci));
+          tx.objectStore('streaks').put({
+            habit_id: cid3, current: 5, longest: 5,
+            last_date: checkIns3[4].date, shield_dates: [], vacation_until: undefined,
+          });
+          tx.oncomplete = () => { debug.textContent = 'Habit 3 written'; resolve(); };
+          tx.onerror = (e) => { debug.textContent = 'ERROR habit 3: ' + e.target.error; reject(e); };
+        });
+
+        output.innerHTML = `
+          <span class="done">✓ Seeded 3 habits with check-in history:</span>
+          <pre>• Morning standup — 10-day streak (checkbox, ☀️)
+• Pushups — 6-day streak (counter, 💪)
+• Water intake — 5-day streak (number, target 2000, 💧)</pre>
+          <div style="margin-top:12px;color:#7aa2f7">Now go to <a href="/" style="color:#7aa2f7">localhost:3000</a> and refresh the page.</div>
+        `;
+      } catch (err) {
+        output.innerHTML = `<span class="fail">✕ Error: ${err.message}</span>`;
+        debug.textContent = err.stack || err.message;
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>
