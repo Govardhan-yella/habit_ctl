@@ -1,12 +1,11 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import type { Habit, TrackingMode, CheckIn, Routine } from '@shared/types';
+import { useState } from 'react';
+import type { Habit, TrackingMode, CheckIn } from '@shared/types';
 import { useHabitStore } from '../hooks/useHabitStore';
 import { CheckboxTracking } from '../tracking/CheckboxTracking';
 import { CounterTracking } from '../tracking/CounterTracking';
 import { NumberTracking } from '../tracking/NumberTracking';
 import { HealthTracking } from '../tracking/HealthTracking';
 import { TimeTracking } from '../tracking/TimeTracking';
-import { StreakBadge } from './StreakBadge';
 import { StreakDetail } from './StreakDetail';
 
 interface HabitRowProps {
@@ -22,18 +21,16 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
   const completed = checkIn?.completed ?? false;
   const mode = habit.mode;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [streakOpen, setStreakOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const currentRoutine = routines.find(r => r.id === habit.routineId);
 
   const handleRoutineChange = async (routineId: string) => {
     if (routineId === '') {
-      // Detach from current routine
       if (habit.routineId) {
         await detachHabitFromRoutine(habit.routineId, habit.id);
       }
     } else {
-      // Attach to new routine
       if (habit.routineId !== routineId) {
         await attachHabitToRoutine(routineId, habit.id);
       }
@@ -47,22 +44,26 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
         {habit.icon ? habit.icon : '○'}
       </div>
 
-      {/* optional color dot — use a wrapper span with inline style for CSS custom property */}
+      {/* optional color dot */}
       {habit.color && (
         <span
           className="habit-color-dot"
-          style={{ background: habit.color, boxShadow: `0 0 6px ${habit.color}` }}
+          style={{ background: habit.color }}
         />
       )}
 
-      {/* name + mode label */}
+      {/* name + mode label + streak */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="habit-name">{habit.name}</div>
         <div className="habit-mode-label">
           {mode}
           {streak && streak.current > 0 && (
-            <span className="streak-badge" onClick={() => setStreakOpen(true)} style={{ cursor: 'pointer' }}>
-              <span className="streak-badge-fire">🔥</span> {streak.current}
+            <span
+              className="streak-badge"
+              onClick={() => setDetailOpen(true)}
+              title="View streak details"
+            >
+              🔥 {streak.current}
             </span>
           )}
         </div>
@@ -104,7 +105,7 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
         </select>
       </div>
 
-      {/* delete + streak detail */}
+      {/* delete / streak detail */}
       {confirmingDelete ? (
         <div className="habit-delete-confirm" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
           <span style={{ fontSize: '10px', color: 'var(--fg-dim)', lineHeight: 1.4 }}>
@@ -125,11 +126,11 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
             Cancel
           </button>
         </div>
-      ) : streakOpen ? (
+      ) : detailOpen ? (
         <StreakDetail
           habitId={habit.id}
           streak={streak}
-          onClose={() => setStreakOpen(false)}
+          onClose={() => setDetailOpen(false)}
         />
       ) : (
         <button
