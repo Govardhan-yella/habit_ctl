@@ -54,16 +54,34 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
 
       {/* name + mode label + streak */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="habit-name">{habit.name}</div>
+        <div className="habit-name">
+          <span className="status-dot" style={{
+            background: completed ? 'var(--success)' : 'var(--fg-dim)',
+            opacity: completed ? 1 : 0.5,
+          }}></span>
+          {habit.name}
+        </div>
         <div className="habit-mode-label">
           {mode}
           {streak && streak.current > 0 && (
             <span
               className="streak-badge"
               onClick={() => setDetailOpen(true)}
-              title="View streak details"
+              title={`Streak: ${streak.current} days (longest: ${streak.longest})`}
             >
-              🔥 {streak.current}
+              <span style={{ fontSize: '9px' }}>🔥</span>
+              <span className="streak-count">{streak.current}</span>
+              {streak.current >= 7 && (
+                <span className="streak-flame" style={{ fontSize: '10px' }}>🔥</span>
+              )}
+              {/* ASCII sparkline of recent activity */}
+              {streak.last_date && (
+                <span className="streak-spark" title={`${streak.current} consecutive days`}>
+                  {Array.from({ length: Math.min(streak.current, 8) }, (_, i) =>
+                    i < streak.current ? '█' : '░'
+                  ).join('')}
+                </span>
+              )}
             </span>
           )}
         </div>
