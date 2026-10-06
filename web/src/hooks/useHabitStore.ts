@@ -267,6 +267,30 @@ export function useHabitStore() {
     [streakMap],
   );
 
+  /** Get an ASCII sparkline of recent completions for a habit (last N days).
+   *  Uses block characters ▀▌▄▎▍▏▁▏ and shows completed/empty per day. */
+  const getRecentTrend = useCallback(
+    (habitId: string, days: number = 7): string => {
+      const today = new Date();
+      const result: string[] = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().slice(0, 10);
+        d.setHours(23, 59, 59, 999);
+        const dateEnd = d.toISOString();
+        d.setHours(0, 0, 0, 0);
+        const dateStart = d.toISOString();
+        const hasCheckIn = checkIns.some(
+          (c) => c.habit_id === habitId && c.date === dateStr && c.completed,
+        );
+        result.push(hasCheckIn ? '█' : '░');
+      }
+      return result.join('');
+    },
+    [checkIns],
+  );
+
   return {
     habits,
     routines,
@@ -286,6 +310,7 @@ export function useHabitStore() {
     detachHabitFromRoutine,
     upsertCheckIn,
     getStreak,
+    getRecentTrend,
     updateStreak: store.updateStreak,
     computeAndSaveStreak: store.computeAndSaveStreak,
   };

@@ -289,87 +289,55 @@ a:hover {
   font-size: 11px;
 }
 
-/* Daily progress bar at bottom of list — gylf-style terminal progress */
+/* Daily progress bar at bottom of list — solid, clean, no patterns */
 .habit-list-progress {
-  margin-top: 6px;
-  padding: 6px 4px;
+  margin-top: 4px;
+  padding: 4px 0;
 }
 
 .habit-list-progress-bar {
   width: 100%;
-  height: 7px;
-  background: var(--bg);
+  height: 8px;
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 2px;
   overflow: hidden;
-  margin-bottom: 4px;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
 .habit-list-progress-fill {
   height: 100%;
-  background: linear-gradient(90, var(--accent-bright), var(--accent));
-  border-radius: 1px;
-  transition: width 0.4s cubic-bezier(0.25, 0.4, 0.25, 1), background 0.3s ease;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.4s cubic-bezier(0.25, 0.4, 0.25, 1);
   will-change: width;
-  position: relative;
-  overflow: hidden;
 }
 
-/* Terminal-style scanline effect on fill */
-.habit-list-progress-fill::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(255, 255, 255, 0.05),
-    rgba(255, 255, 255, 0.05) 2px,
-    transparent 2px,
-    transparent 4px
-  );
-  opacity: 0.3;
-}
-
-/* Pulsing glow when complete */
+/* Blinking cursor + glow when complete */
 .habit-list-progress-fill[data-complete="true"] {
   animation: pulse-once 0.8s ease-out 0.2s;
-  box-shadow: 0 0 12px var(--accent-bright);
+  box-shadow: 0 0 14px var(--accent-bright);
 }
 
 @keyframes pulse-once {
-  0% { box-shadow: 0 0 4px var(--accent); opacity: 0.8; }
-  30% { box-shadow: 0 0 14px var(--accent-bright); opacity: 1; }
-  60% { box-shadow: 0 0 8px var(--accent); opacity: 0.9; }
-  100% { box-shadow: 0 0 0px var(--accent); opacity: 1; }
+  0% { box-shadow: 0 0 6px var(--accent); }
+  30% { box-shadow: 0 0 18px var(--accent-bright); }
+  60% { box-shadow: 0 0 10px var(--accent); }
+  100% { box-shadow: 0 0 4px var(--accent); }
 }
 
-/* Tick marks on the progress bar background */
-.habit-list-progress-bar::after {
-  content: '';
+.habit-list-progress-fill[data-complete="true"]::after {
+  content: '▊';
   position: absolute;
   top: 0;
-  left: 0;
   right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    to right,
-    transparent 16%, var(--border) 16%,
-    transparent 17%, transparent 33%,
-    var(--border) 33%, var(--border) 34%,
-    transparent 34%, transparent 50%,
-    var(--border) 50%, var(--border) 51%,
-    transparent 51%, transparent 66%,
-    var(--border) 66%, var(--border) 67%,
-    transparent 67%, transparent 83%,
-    var(--border) 83%, var(--border) 84%,
-    transparent 84%
-  );
-  opacity: 0.15;
-  pointer-events: none;
+  font-size: 12px;
+  color: var(--accent-bright);
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 .habit-list-progress-text {
@@ -380,15 +348,13 @@ a:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: color 0.2s ease;
+  margin-top: 2px;
 }
 
 .habit-list-progress-text .progress-percent {
   font-weight: 700;
   color: var(--accent);
   font-size: 10px;
-  letter-spacing: -0.01em;
-  text-shadow: 0 0 4px rgba(122, 162, 247, 0.3);
 }
 
 .habit-list-progress-text .progress-count {
@@ -396,43 +362,26 @@ a:hover {
   font-weight: 400;
 }
 
-.habit-list-progress-stats {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
+/* Streak summary on progress bar — ASCII sparkline */
 .habit-list-streak-summary {
-  font-size: 9px;
+  font-size: 8px;
   color: var(--warning);
   font-family: var(--font-mono);
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-weight: 500;
+  font-weight: 600;
   padding: 1px 6px;
   border-radius: 9999px;
-  background: rgba(224, 175, 104, 0.1);
+  background: rgba(224, 175, 104, 0.12);
+  border: 1px solid rgba(224, 175, 104, 0.2);
 }
 
-/* Blinking cursor effect for 100% */
-.habit-list-progress-fill[data-complete="true"]::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 2px;
-  height: 100%;
-  background: var(--accent-bright);
-  animation: blink 1s steps(1) infinite;
-  box-shadow: 0 0 6px var(--accent-bright);
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+.habit-list-streak-summary .streak-spark {
+  font-size: 7px;
+  letter-spacing: -1px;
+  color: var(--warning);
+  opacity: 0.8;
 }
 
 /* Habit row — soft card style */
@@ -507,17 +456,18 @@ a:hover {
   transition: background-color 0.2s ease;
 }
 
-/* Streak badge — refined */
+/* Streak badge — fire icon + count + ASCII sparkline */
 .streak-badge {
-  font-size: 8px;
-  color: var(--accent);
+  font-size: 9px;
+  color: var(--warning);
   display: inline-flex;
   align-items: center;
   gap: 3px;
   margin-left: 6px;
-  padding: 1px 8px;
+  padding: 1px 6px;
   border-radius: 9999px;
-  background: var(--accent-soft);
+  background: rgba(224, 175, 104, 0.12);
+  border: 1px solid rgba(224, 175, 104, 0.2);
   font-weight: 600;
 }
 
@@ -533,10 +483,11 @@ a:hover {
 
 .streak-spark {
   font-family: var(--font-mono);
-  font-size: 6px;
-  color: var(--success);
-  letter-spacing: -0.5px;
-  opacity: 0.5;
+  font-size: 7px;
+  color: var(--warning);
+  letter-spacing: -1px;
+  opacity: 0.8;
+  white-space: nowrap;
 }
 
 .tracking-cell {
@@ -948,7 +899,7 @@ a:hover {
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* ── Streak badge ── */
+/* ── Streak badge (in HabitRow) ── */
 .streak-badge {
   font-size: 9px;
   color: var(--warning);
@@ -956,10 +907,40 @@ a:hover {
   align-items: center;
   gap: 3px;
   margin-left: 6px;
-  padding: 2px 8px;
+  padding: 1px 6px;
   border-radius: 9999px;
-  background: var(--accent-soft);
+  background: rgba(224, 175, 104, 0.12);
+  border: 1px solid rgba(224, 175, 104, 0.2);
   font-weight: 600;
+}
+
+.streak-count {
+  font-weight: 700;
+  color: var(--warning);
+  font-variant-numeric: tabular-nums;
+}
+
+.streak-flame {
+  display: none;
+}
+
+.streak-spark {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: -1px;
+  color: var(--warning);
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+/* ASCII sparkline trend on progress bar */
+.progress-trend {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  color: var(--accent);
+  letter-spacing: -1px;
+  opacity: 0.6;
+  white-space: nowrap;
 }
 
 /* ── Tabs ── */

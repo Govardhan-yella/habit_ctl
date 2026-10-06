@@ -42,15 +42,14 @@ export function HabitList() {
     return { activeStreaks, longestOverall, avgStreak };
   }, [habits, streakMap]);
 
-  // Build ASCII sparkline for overall progress trend
+  // Build ASCII sparkline showing habit completion status (█ = done, ░ = not done)
   const progressTrend = useMemo(() => {
     if (habits.length === 0) return '';
-    // Generate sparkline from check-in completeness
-    return Array.from({ length: 5 }, (_, i) => {
-      const idx = progress.completed + i;
-      return idx < progress.total ? '░' : (idx < habits.length ? '▒' : '█');
+    return habits.map(habit => {
+      const ci = todayCheckIns[habit.id];
+      return ci?.completed ? '█' : '░';
     }).join('');
-  }, [progress, habits.length]);
+  }, [habits, todayCheckIns]);
 
   return (
     <div className="habit-list">
@@ -92,11 +91,16 @@ export function HabitList() {
               <span className="progress-percent">{progress.percent}%</span>
               <span className="progress-count">{progress.completed}/{progress.total} today</span>
             </span>
-            {/* Streak overview */}
+            {/* ASCII sparkline trend on overall progress */}
+            {progressTrend && (
+              <span className="progress-trend" title="Today's completion trend">{progressTrend}</span>
+            )}
+            {/* Streak overview with ASCII sparkline */}
             {streakStats.activeStreaks > 0 && (
               <span className="habit-list-streak-summary" title={`${streakStats.activeStreaks} active streaks · longest: ${streakStats.longestOverall} days · avg: ${streakStats.avgStreak} days`}>
                 <span style={{ fontSize: '9px' }}>🔥</span>
                 {streakStats.activeStreaks} active · best {streakStats.longestOverall}
+                <span className="streak-spark">{Array.from({ length: Math.min(streakStats.activeStreaks, 8) }, (_, i) => '█').join('')}</span>
               </span>
             )}
           </div>
