@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DB Debug</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #14151e; color: #cdd1e0; }
+    h2 { color: #7aa2f7; margin-bottom: 12px; }
+    button { padding: 8px 16px; background: #7aa2f7; color: #14151e; border: none; border-radius: 6px; cursor: pointer; font-family: monospace; margin: 4px 0; }
+    pre { background: #1d1f2d; padding: 12px; border-radius: 6px; overflow: auto; font-size: 11px; margin: 8px 0; border: 1px solid #3b3d57; }
+  </style>
+</head>
+<body>
+  <h2>habitctl DB Debug</h2>
+  <button onclick="dumpDB()">Dump database</button>
+  <button onclick="clearDB()">Clear DB</button>
+  <pre id="out">Click a button to start.</pre>
+
+  <script>
+    var DB_NAME = 'habitctl';
+    var DB_VERSION = 1;
+
+    function openDB() {
+      return new Promise(function(resolve, reject) {
+        var req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onsuccess = function() { resolve(req.result); };
+        req.onerror = function() { reject(req.error); };
+        req.onupgradeneeded = function(e) {
+          var db = e.target.result;
+          if (!db.objectStoreNames.contains('habits')) {
+            var h = db.createObjectStore('habits', { keyPath: 'id' });
+            h.createIndex('routineId', 'routineId');
+            h.createIndex('archived', 'archived_at');
+          }
+          if (!db.objectStoreNames.contains('routines')) {
+            db.createObjectStore('routines', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains('checkins')) {
+            var c = db.createObjectStore('checkins', { keyPath: 'id' });
+            c.createIndex('habitDate', ['habit_id', 'date']);
+            c.createIndex('habitId', 'habit_id');
+          }
+          if (!db.objectStoreNames.contains('streaks')) {
+            db.createObjectStore('streaks', { keyPath: 'habit_id' });
+          }
+          if (!db.objectStoreNames.contains('progress')) {
+            db.createObjectStore('progress', { keyPath: 'id' });
+          }
+        };
+      });
+    }
+
+    async function dumpDB() {
+      var db = await openDB();
+      var out = document.getElementById('out');
+      out.textContent = 'Reading...';
+
+      var tx = db.transaction(['habits', 'checkins', 'streaks'], 'readonly');
+
+      var habits = await new Promise(function(r) {
+        var req = tx.objectStore('habits').getAll();
+        req.onsuccess = function() { r(req.result); };
+      });
+
+      var checkins = await new Promise(function(r) {
+        var req = tx.objectStore('checkins').getAll();
+        req.onsuccess = function() { r(req.result); };
+      });
+
+      var streaks = await new Promise(function(r) {
+        var req = tx.objectStore('streaks').getAll();
+        req.onsuccess = function() { r(req.result); };
+      });
+
+      var today = new Date().toISOString().slice(0, 10);
+      out.textContent = JSON.stringify({
+        today: today,
+        habitCount: habits.length,
+        checkinCount: checkins.length,
+        streakCount: streaks.length,
+        habits: habits.map(function(h) {
+          return { name: h.name, mode: h.mode, id: h.id.slice(0,8) };
+        }),
+        todayCheckins: checkins.filter(function(c) { return c.date === today; }),
+        streaks: streaks.map(function(s) {
+          return { habit_id: s.habit_id.slice(0,8), current: s.current, longest: s.longest, last_date: s.last_date };
+        }),
+        sampleCheckins: checkins.slice(0, 5).map(function(c) {
+          return { date: c.date, completed: c.completed, habit_id: c.habit_id.slice(0,8), value: c.value };
+        })
+      }, null, 2);
+    }
+
+    async function clearDB() {
+      await indexedDB.deleteDatabase(DB_NAME);
+      document.getElementById('out').textContent = 'DB cleared. Refresh page.';
+    }
+  </script>
+</body>
+</html>

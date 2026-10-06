@@ -70,7 +70,8 @@
         debug.style.display = 'block';
         debug.textContent = 'DB opened';
 
-        // Check existing
+        // Use same date logic as the app for consistency
+        var todayIso = new Date().toISOString().slice(0, 10);
         var existing = await new Promise(function(r) {
           var tx0 = db.transaction('habits', 'readonly');
           var x = tx0.objectStore('habits').getAll();
