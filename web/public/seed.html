@@ -54,9 +54,15 @@
       });
     }
 
-    function prevDate(dateStr) {
+    // UTC date helpers — must match app's streak computation (new Date().toISOString().slice(0,10))
+    function todayUTC() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function offsetUTC(dateStr, days) {
+      // dateStr is YYYY-MM-DD in UTC; produce a new YYYY-MM-DD shifted by `days`
       var d = new Date(dateStr + 'T12:00:00.000Z');
-      d.setUTCDate(d.getUTCDate() - 1);
+      d.setUTCDate(d.getUTCDate() + days);
       return d.toISOString().slice(0, 10);
     }
 
@@ -70,124 +76,125 @@
         debug.style.display = 'block';
         debug.textContent = 'DB opened';
 
-        // Use same date logic as the app for consistency
-        var todayIso = new Date().toISOString().slice(0, 10);
+        // Check if already seeded
         var existing = await new Promise(function(r) {
           var tx0 = db.transaction('habits', 'readonly');
           var x = tx0.objectStore('habits').getAll();
           x.onsuccess = function() { r(x.result); };
         });
         if (existing.some(function(h) { return h.name === 'Morning standup'; })) {
-          output.innerHTML = '<span class="done">Already seeded - "Morning standup" exists. Refresh habitctl.</span>';
+          output.innerHTML = '<span class="done">Already seeded - "Morning standup" exists.</span>\n<span class="hint">Refresh <a href="/" style="color:#7aa2f7">localhost:3000</a></span>';
           return;
         }
 
-        var today = new Date();
-        var habitId = crypto.randomUUID();
+        var today = todayUTC();
+        debug.textContent = 'Today (UTC): ' + today;
 
-        // Morning standup - checkbox, 10-day streak
-        var tx1 = db.transaction('habits', 'readwrite');
-        tx1.objectStore('habits').put({
-          id: habitId,
-          name: 'Morning standup',
-          mode: 'checkbox',
-          icon: '\u2600\ufe0f',
-          color: '#fc6c26',
-          created_at: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 10).toISOString(),
-        });
+        // ── Morning standup - checkbox, 10-day streak ──
+        var habitId = crypto.randomUUID();
+        debug.textContent = 'Creating Morning standup...';
 
         var checkIns1 = [];
         for (var i = 9; i >= 0; i--) {
-          var d = new Date(today);
-          d.setDate(d.getDate() - i);
+          var dateStr = offsetUTC(today, -i);
           checkIns1.push({
             id: crypto.randomUUID(),
             habit_id: habitId,
-            date: d.toISOString().slice(0, 10),
+            date: dateStr,
             completed: true,
-            timestamp: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 0, 0).toISOString(),
+            value: true,
+            timestamp: new Date(dateStr + 'T09:00:00.000Z').toISOString(),
           });
         }
 
         await new Promise(function(resolve, reject) {
-          var tx = db.transaction(['checkins', 'streaks'], 'readwrite');
+          var tx = db.transaction(['habits', 'checkins', 'streaks'], 'readwrite');
+          tx.objectStore('habits').put({
+            id: habitId, name: 'Morning standup', mode: 'checkbox',
+            icon: '☀️', color: '#fc6c26',
+            created_at: new Date(offsetUTC(today, -10) + 'T09:00:00.000Z').toISOString(),
+          });
           checkIns1.forEach(function(ci) { tx.objectStore('checkins').put(ci); });
           tx.objectStore('streaks').put({
             habit_id: habitId, current: 10, longest: 10,
-            last_date: checkIns1[9].date, shield_dates: [], vacation_until: undefined,
+            last_date: today, shield_dates: [], vacation_until: undefined,
           });
           tx.oncomplete = resolve;
           tx.onerror = function(e) { debug.textContent = 'ERROR habit1: ' + e.target.error; reject(e); };
         });
-        debug.textContent = 'Habit 1 done';
+        debug.textContent = 'Habit 1 done (10-day, today=' + today + ')';
 
-        // Pushups - counter, 6-day
+        // ── Pushups - counter, 6-day ──
         var cid2 = crypto.randomUUID();
-        var tx2 = db.transaction('habits', 'readwrite');
-        tx2.objectStore('habits').put({
-          id: cid2, name: 'Pushups', mode: 'counter', icon: '\uD83D\uDC4A', color: '#7aa2f7',
-          created_at: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6).toISOString(),
-        });
+        debug.textContent = 'Creating Pushups...';
 
         var ci2 = [];
         for (var i = 5; i >= 0; i--) {
-          var d2 = new Date(today);
-          d2.setDate(d2.getDate() - i);
+          var ds2 = offsetUTC(today, -i);
           ci2.push({
-            id: crypto.randomUUID(), habit_id: cid2,
-            date: d2.toISOString().slice(0, 10), completed: true,
+            id: crypto.randomUUID(),
+            habit_id: cid2,
+            date: ds2,
+            completed: true,
             value: 20 + Math.floor(Math.random() * 30),
-            timestamp: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 18, 0, 0).toISOString(),
+            timestamp: new Date(ds2 + 'T18:00:00.000Z').toISOString(),
           });
         }
 
         await new Promise(function(resolve, reject) {
-          var tx2 = db.transaction(['checkins', 'streaks'], 'readwrite');
-          ci2.forEach(function(c) { tx2.objectStore('checkins').put(c); });
-          tx2.objectStore('streaks').put({
-            habit_id: cid2, current: 6, longest: 6,
-            last_date: ci2[5].date, shield_dates: [], vacation_until: undefined,
+          var tx = db.transaction(['habits', 'checkins', 'streaks'], 'readwrite');
+          tx.objectStore('habits').put({
+            id: cid2, name: 'Pushups', mode: 'counter', icon: '👊', color: '#7aa2f7',
+            created_at: new Date(offsetUTC(today, -6) + 'T18:00:00.000Z').toISOString(),
           });
-          tx2.oncomplete = resolve;
-          tx2.onerror = function(e) { debug.textContent = 'ERROR habit2: ' + e.target.error; reject(e); };
+          ci2.forEach(function(c) { tx.objectStore('checkins').put(c); });
+          tx.objectStore('streaks').put({
+            habit_id: cid2, current: 6, longest: 6,
+            last_date: today, shield_dates: [], vacation_until: undefined,
+          });
+          tx.oncomplete = resolve;
+          tx.onerror = function(e) { debug.textContent = 'ERROR habit2: ' + e.target.error; reject(e); };
         });
-        debug.textContent = 'Habit 2 done';
+        debug.textContent = 'Habit 2 done (6-day)';
 
-        // Water intake - number, 5-day
+        // ── Water intake - number, 5-day ──
         var cid3 = crypto.randomUUID();
-        var tx3 = db.transaction('habits', 'readwrite');
-        tx3.objectStore('habits').put({
-          id: cid3, name: 'Water intake', mode: 'number', icon: '\uD83D\uDC44', color: '#7fc7f8', target: 2000,
-          created_at: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5).toISOString(),
-        });
+        debug.textContent = 'Creating Water intake...';
 
         var ci3 = [];
         for (var i = 4; i >= 0; i--) {
-          var d3 = new Date(today);
-          d3.setDate(d3.getDate() - i);
+          var ds3 = offsetUTC(today, -i);
           ci3.push({
-            id: crypto.randomUUID(), habit_id: cid3,
-            date: d3.toISOString().slice(0, 10), completed: true,
+            id: crypto.randomUUID(),
+            habit_id: cid3,
+            date: ds3,
+            completed: true,
             value: 1500 + Math.floor(Math.random() * 1000),
-            timestamp: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 20, 0, 0).toISOString(),
+            timestamp: new Date(ds3 + 'T20:00:00.000Z').toISOString(),
           });
         }
 
         await new Promise(function(resolve, reject) {
-          var tx3 = db.transaction(['checkins', 'streaks'], 'readwrite');
-          ci3.forEach(function(c) { tx3.objectStore('checkins').put(c); });
-          tx3.objectStore('streaks').put({
-            habit_id: cid3, current: 5, longest: 5,
-            last_date: ci3[4].date, shield_dates: [], vacation_until: undefined,
+          var tx = db.transaction(['habits', 'checkins', 'streaks'], 'readwrite');
+          tx.objectStore('habits').put({
+            id: cid3, name: 'Water intake', mode: 'number', icon: '🥤', color: '#7fc7f8',
+            target: 2000,
+            created_at: new Date(offsetUTC(today, -5) + 'T20:00:00.000Z').toISOString(),
           });
-          tx3.oncomplete = resolve;
-          tx3.onerror = function(e) { debug.textContent = 'ERROR habit3: ' + e.target.error; reject(e); };
+          ci3.forEach(function(c) { tx.objectStore('checkins').put(c); });
+          tx.objectStore('streaks').put({
+            habit_id: cid3, current: 5, longest: 5,
+            last_date: today, shield_dates: [], vacation_until: undefined,
+          });
+          tx.oncomplete = resolve;
+          tx.onerror = function(e) { debug.textContent = 'ERROR habit3: ' + e.target.error; reject(e); };
         });
+        debug.textContent = 'Habit 3 done (5-day)';
 
-        output.innerHTML = '<span class="done">Seeded 3 habits:</span>'
-          + '<pre>* Morning standup - 10-day streak (checkbox)\n'
-          + '* Pushups - 6-day streak (counter)\n'
-          + '* Water intake - 5-day streak (number, target 2000)</pre>'
+        output.innerHTML = '<span class="done">Seeded 3 habits (today=' + today + "):</span>"
+          + '<pre>☀️ Morning standup - 10-day streak (checkbox)\n'
+          + '👊 Pushups - 6-day streak (counter)\n'
+          + '🥤 Water intake - 5-day streak (number, target 2000)</pre>'
           + '<div class="hint">Refresh <a href="/" style="color:#7aa2f7">localhost:3000</a></div>';
       } catch (err) {
         output.innerHTML = '<span class="fail">Error: ' + err.message + '</span>';
