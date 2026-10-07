@@ -277,10 +277,6 @@ export function useHabitStore() {
         const d = new Date(today);
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().slice(0, 10);
-        d.setHours(23, 59, 59, 999);
-        const dateEnd = d.toISOString();
-        d.setHours(0, 0, 0, 0);
-        const dateStart = d.toISOString();
         const hasCheckIn = checkIns.some(
           (c) => c.habit_id === habitId && c.date === dateStr && c.completed,
         );

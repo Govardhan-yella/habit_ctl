@@ -5,7 +5,7 @@ import { Heatmap } from './Heatmap';
 
 interface Props {
   habitId: string;
-  streak: Streak | undefined;
+  streak?: Streak;  // Optional: StreakDetail fetches fresh from store internally
   onClose: () => void;
 }
 

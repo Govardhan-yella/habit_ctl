@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Habit, TrackingMode, CheckIn } from '@shared/types';
 import { useHabitStore } from '../hooks/useHabitStore';
 import { CheckboxTracking } from '../tracking/CheckboxTracking';
@@ -6,6 +6,7 @@ import { CounterTracking } from '../tracking/CounterTracking';
 import { NumberTracking } from '../tracking/NumberTracking';
 import { HealthTracking } from '../tracking/HealthTracking';
 import { TimeTracking } from '../tracking/TimeTracking';
+import { StreakBadge } from './StreakBadge';
 import { StreakDetail } from './StreakDetail';
 
 interface HabitRowProps {
@@ -16,8 +17,7 @@ interface HabitRowProps {
 }
 
 export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) {
-  const { getStreak, routines, attachHabitToRoutine, detachHabitFromRoutine } = useHabitStore();
-  const streak = getStreak(habit.id);
+  const { getRecentTrend, routines, attachHabitToRoutine, detachHabitFromRoutine } = useHabitStore();
   const completed = checkIn?.completed ?? false;
   const mode = habit.mode;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -36,6 +36,8 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
       }
     }
   };
+
+  const trend = getRecentTrend(habit.id, 7);
 
   return (
     <div className={`habit-row${completed ? ' completed' : ''}`}>
@@ -63,25 +65,9 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
         </div>
         <div className="habit-mode-label">
           {mode}
-          {streak && streak.current > 0 && (
-            <span
-              className="streak-badge"
-              onClick={() => setDetailOpen(true)}
-              title={`Streak: ${streak.current} days (longest: ${streak.longest})`}
-            >
-              <span style={{ fontSize: '9px' }}>🔥</span>
-              <span className="streak-count">{streak.current}</span>
-              {streak.current >= 7 && (
-                <span className="streak-flame" style={{ fontSize: '10px' }}>🔥</span>
-              )}
-              {/* ASCII sparkline of recent activity */}
-              {streak.last_date && (
-                <span className="streak-spark" title={`${streak.current} consecutive days`}>
-                  {Array.from({ length: Math.min(streak.current, 8) }, (_, i) =>
-                    i < streak.current ? '█' : '░'
-                  ).join('')}
-                </span>
-              )}
+          {trend && trend !== '░░░░░░░' && (
+            <span className="streak-trend-container" title="Last 7 days of completions">
+              <span className="streak-spark">{trend}</span>
             </span>
           )}
         </div>
@@ -123,7 +109,8 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
         </select>
       </div>
 
-      {/* delete / streak detail */}
+      {/* streak badge + delete / streak detail */}
+      <StreakBadge habitId={habit.id} />
       {confirmingDelete ? (
         <div className="habit-delete-confirm" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
           <span style={{ fontSize: '10px', color: 'var(--fg-dim)', lineHeight: 1.4 }}>
@@ -147,7 +134,6 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
       ) : detailOpen ? (
         <StreakDetail
           habitId={habit.id}
-          streak={streak}
           onClose={() => setDetailOpen(false)}
         />
       ) : (

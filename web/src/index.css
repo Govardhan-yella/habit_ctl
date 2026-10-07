@@ -943,6 +943,15 @@ a:hover {
   white-space: nowrap;
 }
 
+/* ASCII sparkline trend container inside habit rows */
+.streak-trend-container {
+  margin-left: 6px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 /* ── Tabs ── */
 .tab-bar {
   display: flex;
