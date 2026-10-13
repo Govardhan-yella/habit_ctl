@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Habit, Routine, CheckIn, Streak, UserProgress } from '@shared/types';
 import { uuid } from '@shared/types';
 import * as store from '../data/habitStore';
@@ -18,9 +19,11 @@ function buildTodayMap(checkIns: CheckIn[]): Record<string, CheckIn | null> {
   return map;
 }
 
-// ── Hook ───────────────────────────────────────────────────────────────────
+// ── Internal Hook ─────────────────────────────────────────────────────────
+// The actual store logic lives here. It is called exactly once by the
+// HabitStoreProvider below, so there is a single shared state instance.
 
-export function useHabitStore() {
+function useInternalHabitStore() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
@@ -184,8 +187,12 @@ export function useHabitStore() {
 
       const map: Record<string, Streak> = {};
       for (const hh of h) {
-        const s = await store.getStreak(hh.id);
-        if (s) map[hh.id] = s;
+        try {
+          const s = await store.getStreak(hh.id);
+          if (s) map[hh.id] = s;
+        } catch (e) {
+          console.warn('[addHabit] streak fetch failed for', hh.id, e);
+        }
       }
       setStreakMap(map);
 
@@ -233,7 +240,6 @@ export function useHabitStore() {
   const attachHabitToRoutine = useCallback(
     async (routineId: string, habitId: string) => {
       await store.attachHabitToRoutine(routineId, habitId);
-      // Refresh routines and the habit's routineId
       const [r, h] = await Promise.all([
         store.getRoutines(),
         store.getHabits(),
@@ -248,7 +254,6 @@ export function useHabitStore() {
   const detachHabitFromRoutine = useCallback(
     async (routineId: string, habitId: string) => {
       await store.detachHabitFromRoutine(routineId, habitId);
-      // Refresh routines and the habit's routineId
       const [r, h] = await Promise.all([
         store.getRoutines(),
         store.getHabits(),
@@ -268,7 +273,7 @@ export function useHabitStore() {
   );
 
   /** Get an ASCII sparkline of recent completions for a habit (last N days).
-   *  Uses block characters ▀▌▄▎▍▏▁▏ and shows completed/empty per day. */
+   *  Uses block characters █ and ░ showing completed/empty per day. */
   const getRecentTrend = useCallback(
     (habitId: string, days: number = 7): string => {
       const today = new Date();
@@ -310,4 +315,28 @@ export function useHabitStore() {
     updateStreak: store.updateStreak,
     computeAndSaveStreak: store.computeAndSaveStreak,
   };
+}
+
+type HabitStoreContextType = ReturnType<typeof useInternalHabitStore>;
+
+const HabitStoreContext = createContext<HabitStoreContextType | null>(null);
+
+/** Provider that creates a single shared store instance. Wrap your app
+ *  (or any subtree) with this to share state across all consumers. */
+export function HabitStoreProvider({ children }: { children: ReactNode }) {
+  const store = useInternalHabitStore();
+  return (
+    <HabitStoreContext.Provider value={store}>
+      {children}
+    </HabitStoreContext.Provider>
+  );
+}
+
+/** Consumer hook. Must be used within a HabitStoreProvider. */
+export function useHabitStore(): HabitStoreContextType {
+  const ctx = useContext(HabitStoreContext);
+  if (!ctx) {
+    throw new Error('useHabitStore must be used within a HabitStoreProvider');
+  }
+  return ctx;
 }

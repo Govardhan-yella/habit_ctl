@@ -35,13 +35,14 @@ export function AddHabitModal({ onClose }: { onClose: () => void }) {
   const [reminderTime, setReminderTime] = useState('09:00');
   const [reminderDays, setReminderDays] = useState<number[]>([1, 2, 3, 4, 5]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    console.log('[handleSubmit] called');
     e.preventDefault();
     if (!name.trim()) return;
     const reminder: Reminder | undefined = reminderEnabled
       ? { enabled: true, time: reminderTime, repeatDays: reminderDays }
       : undefined;
-    addHabit({
+    await addHabit({
       name: name.trim(),
       mode,
       color: color ?? undefined,

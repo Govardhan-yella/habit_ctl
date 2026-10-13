@@ -3,36 +3,47 @@ import type { Habit, Routine, CheckIn, Streak, UserProgress, ExportFile } from '
 import { uuid } from '@shared/types';
 
 const DB_NAME = 'habitctl';
-const DB_VERSION = 1;
+const DB_VERSION = 4;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
 function getDB(): Promise<IDBPDatabase> {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        // Habits store
-        if (!db.objectStoreNames.contains('habits')) {
-          const h = db.createObjectStore('habits', { keyPath: 'id' });
-          h.createIndex('routineId', 'routineId');
-          h.createIndex('archived', 'archived_at');
-        }
-        // Routines store
-        if (!db.objectStoreNames.contains('routines')) {
-          const r = db.createObjectStore('routines', { keyPath: 'id' });
-        }
-        // Check-ins store — keyed by [habit_id]:[date] compound
-        if (!db.objectStoreNames.contains('checkins')) {
-          const c = db.createObjectStore('checkins', { keyPath: 'id' });
-          c.createIndex('habitDate', ['habit_id', 'date']);
-          c.createIndex('habitId', 'habit_id');
-        }
-        // Streaks store
-        if (!db.objectStoreNames.contains('streaks')) {
-          const s = db.createObjectStore('streaks', { keyPath: 'habit_id' });
-        }
-        // Progress store (single record)
-        if (!db.objectStoreNames.contains('progress')) {
+      upgrade(db, oldVersion) {
+        // When upgrading from any older version, delete all stores and
+        // recreate them fresh. This handles schema mismatches from
+        // previous versions (e.g. v3 with different keyPaths/indexes).
+        if (oldVersion < 1) {
+          // Fresh create — just create all stores
+          const habits = db.createObjectStore('habits', { keyPath: 'id' });
+          habits.createIndex('routineId', 'routineId');
+          habits.createIndex('archived', 'archived_at');
+          db.createObjectStore('routines', { keyPath: 'id' });
+          const checkins = db.createObjectStore('checkins', { keyPath: 'id' });
+          checkins.createIndex('habitDate', ['habit_id', 'date']);
+          checkins.createIndex('habitId', 'habit_id');
+          db.createObjectStore('streaks', { keyPath: 'habit_id' });
+          db.createObjectStore('progress', { keyPath: 'id' });
+        } else {
+          // Upgrading from an older version with incompatible schema —
+          // wipe everything and recreate.
+          const storeNames = [
+            'habits', 'routines', 'checkins', 'streaks', 'progress',
+          ];
+          for (const name of storeNames) {
+            if (db.objectStoreNames.contains(name)) {
+              db.deleteObjectStore(name);
+            }
+          }
+          const habits = db.createObjectStore('habits', { keyPath: 'id' });
+          habits.createIndex('routineId', 'routineId');
+          habits.createIndex('archived', 'archived_at');
+          db.createObjectStore('routines', { keyPath: 'id' });
+          const checkins = db.createObjectStore('checkins', { keyPath: 'id' });
+          checkins.createIndex('habitDate', ['habit_id', 'date']);
+          checkins.createIndex('habitId', 'habit_id');
+          db.createObjectStore('streaks', { keyPath: 'habit_id' });
           db.createObjectStore('progress', { keyPath: 'id' });
         }
       },
@@ -155,11 +166,8 @@ export async function getCheckIns(): Promise<CheckIn[]> {
 
 export async function getCheckInsForDay(date: string): Promise<CheckIn[]> {
   const db = await getDB();
-  // Use the compound index
-  const index = db.transaction('checkins').objectStore('checkins').index('habitDate');
-  return index.getAll(IDBKeyRange.only([undefined, date]));
-  // idb's getAll with a key range on compound index requires the full key;
-  // simpler: get all and filter.
+  const all = await db.getAll('checkins');
+  return all.filter(c => c.date === date);
 }
 
 export async function getAllCheckInsForHabit(habitId: string): Promise<CheckIn[]> {

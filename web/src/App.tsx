@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ThemeProvider, useTheme, useApplyTheme } from './themes/index';
-import { useHabitStore } from './hooks/useHabitStore';
+import { useHabitStore, HabitStoreProvider } from './hooks/useHabitStore';
 import { useReminders } from './hooks/useReminders';
 import { HabitList } from './components/HabitList';
 import { AddHabitModal } from './components/AddHabitModal';
@@ -138,7 +138,9 @@ function AppInner() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppInner />
+      <HabitStoreProvider>
+        <AppInner />
+      </HabitStoreProvider>
     </ThemeProvider>
   );
 }
