@@ -3,7 +3,7 @@ import { useHabitStore } from '../hooks/useHabitStore';
 import { HabitRow } from './HabitRow';
 
 export function HabitList() {
-  const { habits, todayCheckIns, toggleHabit, deleteHabit, streakMap } = useHabitStore();
+  const { habits, todayCheckIns, toggleHabit, deleteHabit, streakMap, loading } = useHabitStore();
 
   const empty = habits.length === 0;
 
@@ -73,8 +73,8 @@ export function HabitList() {
         ))
       )}
 
-      {/* Daily progress bar */}
-      {!empty && (
+      {/* Daily progress bar — only show after data has loaded */}
+      {!empty && !loading && (
         <div className="habit-list-progress">
           <div className="habit-list-progress-bar">
             <div
@@ -82,7 +82,7 @@ export function HabitList() {
               data-complete={progress.percent === 100 ? 'true' : 'false'}
               style={{
                 width: `${progress.percent}%`,
-                transition: 'width 0.4s cubic-bezier(0.25, 0.4, 0.25, 1), background-color 0.3s ease',
+                backgroundColor: progress.percent === 100 ? 'var(--success)' : 'var(--accent)',
               }}
             />
           </div>

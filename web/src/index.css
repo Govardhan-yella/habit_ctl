@@ -308,36 +308,11 @@ a:hover {
   height: 100%;
   background: var(--accent);
   border-radius: 2px;
-  transition: width 0.4s cubic-bezier(0.25, 0.4, 0.25, 1);
-  will-change: width;
 }
 
-/* Blinking cursor + glow when complete */
+/* Solid colour when 100 % — no animations, no glow, no background */
 .habit-list-progress-fill[data-complete="true"] {
-  animation: pulse-once 0.8s ease-out 0.2s;
-  box-shadow: 0 0 14px var(--accent-bright);
-}
-
-@keyframes pulse-once {
-  0% { box-shadow: 0 0 6px var(--accent); }
-  30% { box-shadow: 0 0 18px var(--accent-bright); }
-  60% { box-shadow: 0 0 10px var(--accent); }
-  100% { box-shadow: 0 0 4px var(--accent); }
-}
-
-.habit-list-progress-fill[data-complete="true"]::after {
-  content: '▊';
-  position: absolute;
-  top: 0;
-  right: 0;
-  font-size: 12px;
-  color: var(--accent-bright);
-  animation: blink 1s steps(1) infinite;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  background: var(--success);
 }
 
 .habit-list-progress-text {
@@ -946,10 +921,6 @@ a:hover {
 /* ASCII sparkline trend container inside habit rows */
 .streak-trend-container {
   margin-left: 6px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ── Tabs ── */
