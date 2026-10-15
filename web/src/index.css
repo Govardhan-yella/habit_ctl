@@ -308,6 +308,7 @@ a:hover {
   height: 100%;
   background: var(--accent);
   border-radius: 2px;
+  transition: width 0.3s ease;
 }
 
 /* Solid colour when 100 % — no animations, no glow, no background */
