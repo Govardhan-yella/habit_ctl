@@ -7,9 +7,9 @@ export function StreakBadge({ habitId }: { habitId: string }) {
   const streak = getStreak(habitId);
   const [heatmapOpen, setHeatmapOpen] = useState(false);
 
-  if (!streak || streak.current === 0) return null;
-
   const trend = useMemo(() => getRecentTrend?.(habitId, 7), [habitId, getRecentTrend]);
+
+  if (!streak || streak.current === 0) return null;
 
   return (
     <>
