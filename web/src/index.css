@@ -304,6 +304,32 @@ a:hover {
   overflow: hidden;
 }
 
+.habit-list-progress-bar.segmented {
+  display: flex;
+  gap: 1px;
+  height: 8px;
+}
+
+.habit-list-progress-bar.segmented .seg {
+  flex: 1;
+  height: 100%;
+  border-radius: 2px;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.habit-list-progress-bar.segmented .seg.done {
+  background: var(--accent);
+}
+
+.habit-list-progress-bar.segmented[data-complete="true"] .seg.done {
+  background: var(--success);
+}
+
+.habit-list-progress-bar.segmented .seg.todo {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
 .habit-list-progress-fill {
   height: 100%;
   background: var(--accent);

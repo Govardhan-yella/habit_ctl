@@ -90,15 +90,17 @@ export function HabitList() {
       {/* Daily progress bar — only show after data has loaded */}
       {!empty && !loading && (
         <div className="habit-list-progress">
-          <div className="habit-list-progress-bar">
-            <div
-              className="habit-list-progress-fill"
-              data-complete={progress.percent === 100 ? 'true' : 'false'}
-              style={{
-                width: `${progress.percent}%`,
-                backgroundColor: progress.percent === 100 ? 'var(--success)' : 'var(--accent)',
-              }}
-            />
+          <div className="habit-list-progress-bar segmented" data-complete={progress.percent === 100 ? 'true' : 'false'}>
+            {habits.map(habit => {
+              const done = todayCheckIns[habit.id]?.completed ?? false;
+              return (
+                <span
+                  key={habit.id}
+                  className={`seg ${done ? 'done' : 'todo'}`}
+                  title={`${habit.name}: ${done ? 'done' : 'not yet'}`}
+                />
+              );
+            })}
           </div>
           <div className="habit-list-progress-stats">
             <span className="habit-list-progress-text">

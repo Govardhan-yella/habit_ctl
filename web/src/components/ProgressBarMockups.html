@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HabitCtl Progress Bar — Visual Ideas</title>
+<style>
+  /* Mirror habitctl's design tokens */
+  :root {
+    --bg: #fff4d6;
+    --bg-card: #ffffff;
+    --border: #e0d6c2;
+    --fg: #1f1f1f;
+    --fg-dim: #8a7a66;
+    --accent: #fc6c26;
+    --success: #22c58e;
+    --warning: #e0af64;
+    --font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    --radius: 8px;
+    --transition: 0.2s ease;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 20px;
+    background: var(--bg);
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--fg);
+    line-height: 1.5;
+  }
+  h1 { font-size: 16px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--fg-dim); margin-bottom: 20px; }
+
+  .option {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .option h2 {
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .option h2 .tag {
+    font-size: 10px;
+    background: var(--accent);
+    color: white;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  /* Shared bar styles */
+  .bar-track {
+    width: 100%;
+    height: 8px;
+    background: #f0e8dc;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .stats {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--fg-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .spark {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    letter-spacing: -1px;
+    color: var(--accent);
+    opacity: 0.7;
+  }
+  .pct { font-weight: 700; color: var(--accent); font-size: 10px; }
+
+  /* Option A: Segmented */
+  .a-segment {
+    display: flex;
+    gap: 1px;
+    height: 8px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .a-segment .seg {
+    flex: 1;
+    height: 100%;
+  }
+  .a-segment .seg.done { background: var(--accent); }
+  .a-segment .seg.todo { background: #f0e8dc; }
+  .a-segment .seg.done:last-child {
+    background: var(--success);
+  }
+
+  /* Option B: Sparkline-in-bar */
+  .b-track {
+    position: relative;
+  }
+  .b-spark-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-mono);
+    font-size: 6px;
+    color: rgba(252, 108, 38, 0.15);
+    letter-spacing: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 2px;
+    pointer-events: none;
+  }
+  .b-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--warning) 50%, var(--success) 100%);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Option C: Dual-track */
+  .c-track {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .c-outer {
+    width: 100%;
+    height: 6px;
+    background: #e8dccf;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .c-outer .fill {
+    height: 100%;
+    width: 65%;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .c-inner {
+    width: 100%;
+    height: 6px;
+    background: #f5ecd8;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .c-inner .fill {
+    height: 100%;
+    width: 80%;
+    background: var(--success);
+    border-radius: 2px;
+  }
+  .c-label { font-size: 8px; color: var(--fg-dim); font-family: var(--font-mono); }
+
+  /* Option D: Integrated */
+  .d-bar {
+    position: relative;
+    height: 20px;
+  }
+  .d-bar .track {
+    position: absolute;
+    top: 9px;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: #f0e8dc;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .d-bar .fill {
+    position: absolute;
+    top: 9px;
+    left: 0;
+    width: 70%;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 999px;
+    z-index: 1;
+  }
+  .d-bar .spark {
+    position: absolute;
+    top: 9px;
+    transform: translateY(-150%);
+    font-size: 6px;
+    color: var(--fg-dim);
+    letter-spacing: -1px;
+  }
+  .d-bar .pill {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 7px;
+    background: var(--accent);
+    color: white;
+    padding: 1px 5px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+  }
+
+  /* Option E: Color morph */
+  .e-track {
+    width: 100%;
+    height: 10px;
+    background: #f0e8dc;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .e-fill {
+    height: 100%;
+    width: 70%;
+    background: linear-gradient(90deg, #fc6c26 0%, #fbbf24 50%, #22c58e 100%);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+</style>
+</head>
+<body>
+  <h1>HabitCtl Progress Bar — 5 Visual Directions</h1>
+  <p class="subtitle">Current: 3/5 habits done today · 60% · trend: ░████░░ (7-day)</p>
+
+  <!-- Option A: Segmented -->
+  <div class="option">
+    <h2>A: Segmented Per-Habit <span class="tag">Granular</span></h2>
+    <div class="a-segment">
+      <div class="seg done"></div>
+      <div class="seg done"></div>
+      <div class="seg done"></div>
+      <div class="seg todo"></div>
+      <div class="seg todo"></div>
+    </div>
+    <div class="stats"><span class="pct">60%</span><span class="spark">░░░░░░░ ███████</span><span>🔥2 · streak 5</span></div>
+  </div>
+
+  <!-- Option B: Sparkline embedded -->
+  <div class="option">
+    <h2>B: Sparkline Inside Bar <span class="tag">Layered</span></h2>
+    <div class="bar-track b-track">
+      <div class="b-spark-bg">░░░░░░░ ███████</div>
+      <div class="b-fill" style="width: 60%"></div>
+    </div>
+    <div class="stats"><span class="pct">60%</span><span>3/5 today</span><span>🔥2 active</span></div>
+  </div>
+
+  <!-- Option C: Dual-track -->
+  <div class="option">
+    <h2>C: Dual-Track (Today vs 7-day Avg) <span class="tag">Comparison</span></h2>
+    <div class="bar-track c-track">
+      <div class="c-outer"><div class="fill" style="width: 65%"></div></div>
+      <div class="c-inner"><div class="fill" style="width: 80%"></div></div>
+    </div>
+    <div class="stats">
+      <span class="c-label">▰ today 65%</span>
+      <span class="c-label">▱ avg 80%</span>
+      <span class="spark">░░░░░░░</span>
+    </div>
+  </div>
+
+  <!-- Option D: Integrated -->
+  <div class="option">
+    <h2>D: Integrated Bar + Labels <span class="tag">Dashboard</span></h2>
+    <div class="d-bar">
+      <div class="track"></div>
+      <div class="fill"></div>
+      <div class="spark">███████ ░░░░░░░</div>
+      <span class="pill">60%</span>
+    </div>
+    <div class="stats"><span class="pct">3/5 today</span><span>🔥 streak 5</span><span class="spark">░░░░░</span></div>
+  </div>
+
+  <!-- Option E: Color morph -->
+  <div class="option">
+    <h2>E: Color-Morph Fill <span class="tag">Gradient</span></h2>
+    <div class="bar-track e-track">
+      <div class="e-fill" style="width: 60%"></div>
+    </div>
+    <div class="stats"><span class="pct">60%</span><span>3/5 today</span><span class="spark">░░░░░░░</span><span>🔥2 · best 8</span></div>
+  </div>
+</body>
+</html>
