@@ -17,7 +17,7 @@ interface HabitRowProps {
 }
 
 export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) {
-  const { getRecentTrend, routines, attachHabitToRoutine, detachHabitFromRoutine } = useHabitStore();
+  const { routines, attachHabitToRoutine, detachHabitFromRoutine } = useHabitStore();
   const completed = checkIn?.completed ?? false;
   const mode = habit.mode;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -36,8 +36,6 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
       }
     }
   };
-
-  const trend = getRecentTrend(habit.id, 7);
 
   return (
     <div className={`habit-row${completed ? ' completed' : ''}`}>
@@ -65,11 +63,6 @@ export function HabitRow({ habit, checkIn, onToggle, onDelete }: HabitRowProps) 
         </div>
         <div className="habit-mode-label">
           {mode}
-          {trend && trend !== '░░░░░░░' && (
-            <span className="streak-trend-container" title="Last 7 days of completions">
-              <span className="streak-spark">{trend}</span>
-            </span>
-          )}
         </div>
       </div>
 

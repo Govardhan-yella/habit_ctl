@@ -3,7 +3,7 @@ import { useHabitStore } from '../hooks/useHabitStore';
 import { HabitRow } from './HabitRow';
 
 export function HabitList() {
-  const { habits, todayCheckIns, toggleHabit, deleteHabit, streakMap, loading } = useHabitStore();
+  const { habits, todayCheckIns, checkIns, toggleHabit, deleteHabit, streakMap, loading } = useHabitStore();
 
   const empty = habits.length === 0;
 
@@ -42,14 +42,28 @@ export function HabitList() {
     return { activeStreaks, longestOverall, avgStreak };
   }, [habits, streakMap]);
 
-  // Build ASCII sparkline showing habit completion status (█ = done, ░ = not done)
+  // Aggregated ASCII sparkline: 7-day trend across all habits
+  // (█ = >50% of habits done, ░ = <50%). Replaces per-habit sparklines.
   const progressTrend = useMemo(() => {
     if (habits.length === 0) return '';
-    return habits.map(habit => {
-      const ci = todayCheckIns[habit.id];
-      return ci?.completed ? '█' : '░';
-    }).join('');
-  }, [habits, todayCheckIns]);
+    const today = new Date();
+    const result: string[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      let completed = 0;
+      for (const habit of habits) {
+        const ci = checkIns.find(
+          (c) => c.habit_id === habit.id && c.date === dateStr && c.completed,
+        );
+        if (ci) completed++;
+      }
+      const ratio = completed / habits.length;
+      result.push(ratio >= 0.5 ? '█' : '░');
+    }
+    return result.join('');
+  }, [habits, checkIns]);
 
   return (
     <div className="habit-list">
@@ -93,7 +107,7 @@ export function HabitList() {
             </span>
             {/* ASCII sparkline trend on overall progress */}
             {progressTrend && (
-              <span className="progress-trend" title="Today's completion trend">{progressTrend}</span>
+              <span className="progress-trend" title="7-day completion trend">{progressTrend}</span>
             )}
             {/* Streak overview with ASCII sparkline */}
             {streakStats.activeStreaks > 0 && (
