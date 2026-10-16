@@ -1,11 +1,13 @@
 import { store } from '../stores/appStore';
-import { Habit, HabitMode, ScheduleType } from '../types';
+import { Habit, HabitMode, ScheduleType, Reminder } from '../types';
+import { requestNotificationPermission } from '../services/reminders';
 import { createModal, createToast } from './TerminalUI';
 
 /** Open the New Habit / Edit Habit modal. Pass a habit to edit, omit to create. */
 export function openHabitForm(habit?: Habit): void {
   const isEdit = !!habit;
   const schedType: ScheduleType = habit?.schedule.type || 'daily';
+  const reminders: Reminder[] = habit?.reminders ? habit.reminders.map(r => ({ ...r, days: [...r.days] })) : [];
 
   const content = document.createElement('div');
   content.className = 'habit-form';
@@ -21,8 +23,40 @@ export function openHabitForm(habit?: Habit): void {
     <div class="form-group" id="unit-group" style="display:${habit && habit.mode !== 'checkbox' ? 'block' : 'none'}"><label>Unit (optional)</label><input type="text" id="h-unit" placeholder="km, pages, min" value="${habit?.unit ?? ''}"></div>
     <div class="form-group"><label>Schedule</label><select id="h-sched"><option value="daily" ${schedType === 'daily' ? 'selected' : ''}>Daily</option><option value="weekdays" ${schedType === 'weekdays' ? 'selected' : ''}>Weekdays</option><option value="custom" ${schedType === 'custom' ? 'selected' : ''}>Custom</option></select></div>
     <div class="form-group" id="custom-days" style="display:${schedType === 'custom' ? 'block' : 'none'}"><label>Days</label><div class="day-checkboxes">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<label><input type="checkbox" value="${i}" ${habit?.schedule.days?.includes(i) ? 'checked' : ''}> ${d}</label>`).join('')}</div></div>
+    <div class="form-group"><label>Reminders</label><div class="rem-list" id="rem-list"></div><button type="button" class="btn btn-ghost btn-sm" id="rem-add">+ Add reminder</button></div>
     <div class="form-actions"><button class="btn btn-ghost" id="h-cancel">Cancel</button><button class="btn btn-primary" id="h-save">${isEdit ? 'Save' : 'Create'}</button></div>
   `;
+
+  const remList = content.querySelector('#rem-list') as HTMLElement;
+  function renderReminders(): void {
+    if (!reminders.length) { remList.innerHTML = '<span class="rem-empty">No reminders</span>'; return; }
+    remList.innerHTML = reminders.map(r => `
+      <div class="rem-item" data-id="${r.id}">
+        <input type="time" class="rem-time" value="${r.time}">
+        <div class="rem-days">${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => `<label class="rem-day" title="${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]}"><input type="checkbox" value="${i}" ${r.days.includes(i) ? 'checked' : ''}>${d}</label>`).join('')}</div>
+        <button type="button" class="btn btn-ghost btn-sm rem-remove" title="Remove">✕</button>
+      </div>`).join('');
+    remList.querySelectorAll('.rem-item').forEach(item => {
+      const id = item.getAttribute('data-id')!;
+      const r = reminders.find(x => x.id === id)!;
+      item.querySelector('.rem-time')?.addEventListener('change', e => { r.time = (e.target as HTMLInputElement).value; });
+      item.querySelectorAll('.rem-day input').forEach(cb => cb.addEventListener('change', () => {
+        r.days = Array.from(item.querySelectorAll('.rem-day input:checked')).map(c => parseInt((c as HTMLInputElement).value));
+      }));
+      item.querySelector('.rem-remove')?.addEventListener('click', () => {
+        const idx = reminders.findIndex(x => x.id === id);
+        if (idx >= 0) reminders.splice(idx, 1);
+        renderReminders();
+      });
+    });
+  }
+  renderReminders();
+
+  content.querySelector('#rem-add')?.addEventListener('click', async () => {
+    await requestNotificationPermission();
+    reminders.push({ id: crypto.randomUUID(), time: '09:00', days: [], enabled: true });
+    renderReminders();
+  });
 
   createModal(isEdit ? 'Edit Habit' : 'New Habit', content, () => {});
 
@@ -48,10 +82,10 @@ export function openHabitForm(habit?: Habit): void {
     const unit = (content.querySelector('#h-unit') as HTMLInputElement).value || undefined;
 
     if (isEdit) {
-      await store.updateHabit({ ...habit!, name, icon, color, mode, target, unit, schedule });
+      await store.updateHabit({ ...habit!, name, icon, color, mode, target, unit, schedule, reminders });
       createToast('Habit updated', 'success');
     } else {
-      await store.createHabit({ name, icon, color, mode, target, unit, schedule, reminders: [] });
+      await store.createHabit({ name, icon, color, mode, target, unit, schedule, reminders });
       createToast('Habit created', 'success');
     }
     document.querySelector('.modal-overlay')?.remove();

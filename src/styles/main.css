@@ -2177,3 +2177,51 @@ body.no-animations *::after {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ---- Reminders -------------------------------------------- */
+.rem-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; }
+.rem-empty { color: var(--fg-muted); font-size: 0.75rem; }
+.rem-item { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; padding: 0.4rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-secondary); }
+.rem-time { flex: 0 0 6rem; padding: 0.25rem; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-mono); font-size: 0.75rem; }
+.rem-days { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.rem-day { display: flex; gap: 0.2rem; align-items: center; font-size: 0.75rem; color: var(--fg-muted); }
+.rem-day input { accent-color: var(--accent); }
+
+/* ---- Routine badge ---------------------------------------- */
+.habit-routine-badge { display: inline-flex; gap: 0.25rem; align-items: center; padding: 0 0.35rem; border: 1px solid currentColor; border-radius: 999px; font-size: 0.7rem; color: var(--fg-muted); }
+
+/* ---- Custom theme editor ---------------------------------- */
+.theme-editor-body { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem; margin-bottom: 0.75rem; }
+.theme-editor-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+.te-field { display: flex; flex-direction: column; gap: 0.35rem; }
+.te-field label { font-size: 0.75rem; color: var(--fg-muted); }
+.te-field input[type=color] { width: 100%; height: 2rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); }
+.theme-editor-preview { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.6rem; background: var(--bg); color: var(--fg); font-family: var(--font-mono); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02); }
+.tep-top { display: flex; align-items: center; gap: 0.4rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+.tep-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--accent); }
+.tep-title { font-size: 0.75rem; color: var(--fg-muted); }
+.tep-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; }
+.tep-box { width: 0.7rem; height: 0.7rem; border: 1px solid var(--fg-muted); border-radius: 2px; background: transparent; }
+.tep-box-done { background: var(--success); border-color: var(--success); }
+.tep-name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.tep-streak { color: var(--warning); }
+.tep-heat { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.25rem; }
+.tep-cell { height: 0.6rem; border-radius: 2px; background: var(--bg-secondary); }
+.tep-btn { align-self: flex-start; padding: 0.25rem 0.5rem; border: none; border-radius: 4px; background: var(--accent); color: var(--bg); font-family: var(--font-mono); font-size: 0.75rem; cursor: pointer; }
+
+/* ---- Theme cards custom ----------------------------------- */
+.theme-new { display: flex; flex-direction: column; gap: 0.4rem; align-items: center; justify-content: center; color: var(--fg-muted); border-style: dashed; }
+.theme-new-plus { font-size: 1.25rem; }
+.theme-delete { position: absolute; top: 0.35rem; right: 0.35rem; font-size: 0.7rem; color: var(--fg-muted); cursor: pointer; }
+.theme-card { position: relative; }
+
+/* ---- Achievements ----------------------------------------- */
+.achievement-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+.achievement { border: 1px solid var(--border); border-radius: 6px; background: var(--bg-secondary); padding: 0.6rem; display: flex; flex-direction: column; gap: 0.35rem; position: relative; }
+.achievement.unlocked { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(122, 162, 247, 0.2); }
+.ach-icon { font-size: 1rem; }
+.ach-name { font-size: 0.75rem; font-weight: 600; }
+.ach-desc { font-size: 0.7rem; color: var(--fg-muted); }
+.ach-done { font-size: 0.7rem; color: var(--accent); }
+.ach-progress { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem; }
+.ach-count { font-size: 0.7rem; color: var(--fg-muted); }

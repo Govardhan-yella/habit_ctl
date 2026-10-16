@@ -75,6 +75,7 @@ export class HabitListComponent {
     const isSelected = this.selectedId === h.id;
     const archived = !!h.archivedAt;
     const scheduled = store.isHabitScheduledOn(h, date);
+    const routine = state.routines.find(r => r.habitIds.includes(h.id));
     const done = h.mode === 'checkbox' ? !!c : !!(c && c.value >= h.target);
     const progress = h.mode === 'checkbox' ? (done ? 100 : 0) : c ? Math.min(100, (c.value / h.target) * 100) : 0;
     const icons: Record<HabitMode, string> = { checkbox: '☐', counter: '⊞', number: '⌗', timer: '⏱', health: '♥' };
@@ -84,8 +85,9 @@ export class HabitListComponent {
     el.className = `habit-item ${isSelected ? 'selected' : ''} ${done ? 'completed' : ''} ${archived ? 'archived' : ''} ${!scheduled && !archived ? 'off-day' : ''}`;
     el.dataset.habitId = h.id;
     const offDayNote = !scheduled && !archived ? '<span class="habit-offday">off-day</span>' : '';
+    const routineBadge = routine ? `<span class="habit-routine-badge" style="color:${routine.color};border-color:${routine.color}">${routine.icon} ${routine.name}</span>` : '';
     const showProgress = h.mode !== 'checkbox' && h.mode !== 'timer' && h.mode !== 'health';
-    el.innerHTML = `<div class="habit-main"><div class="habit-indicator"><span class="habit-mode-icon" style="color:${h.color}">${icons[h.mode]}</span>${shields > 0 ? `<span class="habit-shield-badge">${shields}🛡</span>` : ''}</div><div class="habit-info"><div class="habit-header"><span class="habit-name">${h.name}</span><span class="habit-mode-badge">${labels[h.mode]}</span>${offDayNote}</div><div class="habit-meta"><span class="habit-streak">🔥 ${streak.current}${streak.isActive ? '' : ' (idle)'}</span><span class="habit-target">${this.getTarget(h, c)}</span></div>${showProgress ? `<div class="habit-progress">${createProgressBar(progress).outerHTML}</div>` : ''}</div><div class="habit-actions">${this.getActions(h, done, c, date, canLog, archived)}</div></div>${isSelected ? this.getDetail(h, cs, streak, shields) : ''}`;
+    el.innerHTML = `<div class="habit-main"><div class="habit-indicator"><span class="habit-mode-icon" style="color:${h.color}">${icons[h.mode]}</span>${shields > 0 ? `<span class="habit-shield-badge">${shields}🛡</span>` : ''}</div><div class="habit-info"><div class="habit-header"><span class="habit-name">${h.name}</span><span class="habit-mode-badge">${labels[h.mode]}</span>${routineBadge}${offDayNote}</div><div class="habit-meta"><span class="habit-streak">🔥 ${streak.current}${streak.isActive ? '' : ' (idle)'}</span><span class="habit-target">${this.getTarget(h, c)}</span></div>${showProgress ? `<div class="habit-progress">${createProgressBar(progress).outerHTML}</div>` : ''}</div><div class="habit-actions">${this.getActions(h, done, c, date, canLog, archived)}</div></div>${isSelected ? this.getDetail(h, cs, streak, shields) : ''}`;
 
     el.querySelector('.habit-main')?.addEventListener('click', e => { if (!(e.target as HTMLElement).closest('.habit-actions')) { this.selectedId = isSelected ? null : h.id; this.render(); } });
     this.wireActions(el, h, done, date, canLog, archived);
