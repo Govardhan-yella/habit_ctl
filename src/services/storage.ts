@@ -8,7 +8,7 @@ interface InitHabitsDB extends DBSchema {
   routines: { key: string; value: Routine; indexes: { 'by-order': number } };
   themes: { key: string; value: Theme };
   user: { key: string; value: User };
-  settings: { key: string; value: UserSettings };
+  settings: { key: string; value: UserSettings & { id: string } };
   sync: { key: string; value: SyncState & { id: string } };
   pendingChanges: { key: string; value: { id: string; type: string; action: string; data: unknown; timestamp: string; retries: number }; indexes: { 'by-timestamp': string } };
 }
@@ -73,7 +73,7 @@ export async function saveUser(user: User): Promise<void> { const db = await get
 export async function getUser(): Promise<User | undefined> { const db = await getDB(); const users = await db.getAll('user'); return users[0]; }
 export async function deleteUser(): Promise<void> { const db = await getDB(); await db.clear('user'); }
 
-export async function saveSettings(settings: UserSettings): Promise<void> { const db = await getDB(); await db.put('settings', settings); }
+export async function saveSettings(settings: UserSettings): Promise<void> { const db = await getDB(); await db.put('settings', { ...settings, id: 'main' }); }
 export async function getSettings(): Promise<UserSettings | undefined> { const db = await getDB(); const settings = await db.getAll('settings'); return settings[0]; }
 
 export async function saveSyncState(sync: SyncState): Promise<void> { const db = await getDB(); await db.put('sync', { id: 'main', ...sync }); }

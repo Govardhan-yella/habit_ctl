@@ -97,14 +97,13 @@ export class SettingsComponent {
   private themeGrid(current: string): string {
     const free = getFreeThemes(); const pro = getProThemes();
     const custom = store.getState().themes.filter(t => t.isCustom);
-    let html = '<div class="theme-category"><h4>Free</h4><div class="theme-grid">';
-    free.forEach(t => html += this.themeCard(t, current));
-    html += '</div></div><div class="theme-category"><h4>Pro</h4><div class="theme-grid">';
-    pro.forEach(t => html += this.themeCard(t, current));
-    html += '</div></div><div class="theme-category"><h4>Custom</h4><div class="theme-grid">';
-    custom.forEach(t => html += this.themeCard(t, current, true));
-    html += `<button class="theme-card theme-new" id="new-theme"><span class="theme-new-plus">+</span><span>New Theme</span></button>`;
-    html += '</div></div>';
+    const category = (title: string, cards: string) =>
+      `<div class="theme-category"><h4>${title}</h4><div class="theme-grid">${cards}</div></div>`;
+    let html = category('Free', free.map(t => this.themeCard(t, current)).join(''));
+    if (pro.length) html += category('Pro', pro.map(t => this.themeCard(t, current)).join(''));
+    html += category('Custom',
+      custom.map(t => this.themeCard(t, current, true)).join('') +
+      `<button class="theme-card theme-new" id="new-theme"><span class="theme-new-plus">+</span><span>New Theme</span></button>`);
     return html;
   }
 

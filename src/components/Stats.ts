@@ -59,7 +59,7 @@ export class StatsComponent {
     const moodAvg = moods.length ? moods.reduce((a:number,m:any)=>a+(moodVal[m.mood]||3),0)/moods.length : 0;
     const moodEmoji = moodAvg>=4.5?'😄':moodAvg>=3.5?'🙂':moodAvg>=2.5?'😐':moodAvg>=1.5?'😕':moodAvg>0?'😢':'—';
     const waters = s.waters.filter((w:any)=>w.date>=r.start&&w.date<=r.end);
-    const waterAvg = waters.length ? (waters.reduce((a:number,w:any)=>a+(w.count||0),0)/waters.length) : 0;
+    const waterAvg = waters.length ? (waters.reduce((a:number,w:any)=>a+(w.glasses||0),0)/waters.length) : 0;
     const maxCur = hs.reduce((m,h)=>Math.max(m, store.getHabitStreak(h.id).current), 0);
     const deltaHtml = delta===null ? '<span class="insight-delta flat">new</span>' : `<span class="insight-delta ${delta>1?'up':delta<-1?'down':'flat'}">${delta>0?'▲':delta<0?'▼':'–'} ${Math.abs(delta).toFixed(0)}%</span>`;
     const card = document.createElement('div'); card.className = 'stat-card insights';

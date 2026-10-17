@@ -116,7 +116,10 @@ export class App {
     window.addEventListener('show-routine-form', (e: any) => this.showRoutineForm(e.detail));
     
     document.addEventListener('keydown', (e) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'Escape') { document.querySelector('.modal-overlay')?.remove(); return; }
+      const t = e.target as HTMLElement;
+      if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || t.isContentEditable) return;
+      if ((e.key === ' ' || e.key === 'Enter') && t instanceof HTMLButtonElement) return;
       switch (e.key.toLowerCase()) {
         case 'j': e.preventDefault(); store.navigateDate('next'); break;
         case 'k': e.preventDefault(); store.navigateDate('prev'); break;
@@ -127,7 +130,6 @@ export class App {
         case 'a': case 'n': e.preventDefault(); this.showHabitForm(); break;
         case '/': e.preventDefault(); this.focusSearch(); break;
         case '?': e.preventDefault(); this.showShortcuts(); break;
-        case 'escape': document.querySelector('.modal-overlay')?.remove(); break;
         case 'l': e.preventDefault(); store.setView('list'); break;
         case ' ': case 'enter': e.preventDefault(); this.toggleSelectedHabit(); break;
         default:
@@ -235,7 +237,7 @@ export class App {
       ['/', 'Focus search (list view)'],
       ['1–9', 'Select habit by position'],
       ['space / enter', 'Complete next due habit'],
-      ['← / →', 'Previous / next day'],
+      ['j / k', 'Next / previous day'],
       ['l / h', 'List / Heatmap view'],
       ['r / s', 'Routines / Stats view'],
       [',', 'Settings'],
