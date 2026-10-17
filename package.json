@@ -1,8 +1,31 @@
 {
   "name": "habit_ctl",
   "version": "1.0.0",
-  "description": "Run your habits like services. Local-first, terminal-style habit tracker.",
+  "private": true,
+  "description": "A local-first, terminal-style habit tracker for developers and minimalists",
   "type": "module",
+  "license": "MIT",
+  "author": "Govardhan Yella",
+  "homepage": "https://github.com/Govardhan-yella/habit_ctl#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Govardhan-yella/habit_ctl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Govardhan-yella/habit_ctl/issues"
+  },
+  "keywords": [
+    "habit-tracker",
+    "pwa",
+    "typescript",
+    "vite",
+    "local-first",
+    "terminal",
+    "productivity"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
