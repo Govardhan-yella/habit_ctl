@@ -2256,9 +2256,9 @@ body.no-animations *::after {
 
 /* ---- Quick capture widget --------------------------------- */
 .capture-form { display: grid; grid-template-columns: 1fr auto; gap: 0.35rem; }
-.capture-input, .capture-select { font-family: var(--font-mono); font-size: 0.72rem; padding: 0.3rem 0.4rem; background: var(--bg-secondary); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; }
-.capture-input { grid-column: 1 / -1; }
-.capture-select { grid-column: 1; }
+.capture-form input, .capture-form select { font-family: var(--font-mono); font-size: 0.72rem; padding: 0.3rem 0.4rem; background: var(--bg-secondary); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; }
+.capture-form input { grid-column: 1 / -1; }
+.capture-form select { grid-column: 1; }
 .note-list { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem; }
 .note-row { display: flex; align-items: baseline; gap: 0.35rem; font-size: 0.72rem; }
 .note-time { color: var(--fg-muted); flex: 0 0 auto; }
@@ -2285,3 +2285,37 @@ body.no-animations *::after {
 .shortcuts-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 1rem; align-items: center; font-size: 0.78rem; }
 .sc-key kbd { display: inline-block; min-width: 1.4rem; text-align: center; padding: 0.1rem 0.4rem; background: var(--bg-secondary); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.68rem; }
 .sc-desc { color: var(--fg-muted); }
+
+/* ---- Widget rail header + customization ------------------- */
+.rail-head { display: flex; align-items: center; justify-content: space-between; padding: 0 0.25rem 0.25rem; }
+.rail-title { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); }
+.rail-customize { background: none; border: 1px solid transparent; border-radius: 6px; color: var(--fg-muted); font-size: 0.95rem; line-height: 1; padding: 0.15rem 0.35rem; cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; }
+.rail-customize:hover { color: var(--accent); border-color: var(--border); }
+
+.widget-rail .widget-sm { padding: 0.5rem 0.6rem; }
+.rail-head + .widget-sm, .widget-rail .widget-sm + .widget-sm { margin-top: 0; }
+.widget-lg { min-height: 9rem; }
+.rail-head + .widget-empty, .widget-empty { margin-top: 0.25rem; }
+
+/* ---- Widget customizer modal ------------------------------ */
+.widget-customizer { display: flex; flex-direction: column; gap: 0.5rem; min-width: min(420px, 78vw); }
+.wcfg-list { display: flex; flex-direction: column; gap: 0.35rem; max-height: 52vh; overflow-y: auto; }
+.wcfg-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; }
+.wcfg-row.dragging { opacity: 0.5; }
+.wcfg-toggle { display: flex; align-items: center; gap: 0.5rem; flex: 1; cursor: pointer; font-size: 0.76rem; }
+.wcfg-toggle input { accent-color: var(--accent); }
+.wcfg-name { display: flex; flex-direction: column; }
+.wcfg-name em { font-style: normal; font-size: 0.62rem; color: var(--fg-muted); }
+.wcfg-size { display: flex; gap: 0.15rem; }
+.wcfg-sz { font-size: 0.6rem; padding: 0.15rem 0.4rem; background: var(--bg); color: var(--fg-muted); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
+.wcfg-sz.active { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+.wcfg-order { display: flex; flex-direction: column; gap: 0.05rem; }
+.wcfg-mv { font-size: 0.55rem; line-height: 1; padding: 0.1rem 0.3rem; background: var(--bg); color: var(--fg-muted); border: 1px solid var(--border); border-radius: 3px; cursor: pointer; }
+.wcfg-mv:disabled { opacity: 0.3; cursor: default; }
+.wcfg-foot { display: flex; justify-content: flex-end; }
+
+/* ---- Combined timer widget -------------------------------- */
+.preset-labelled { align-items: center; gap: 0.25rem; }
+.preset-label { font-size: 0.62rem; color: var(--fg-muted); width: 3rem; }
+.focus-mode.running { color: var(--accent); }
+.widget-sm .widget-stat, .widget-sm .mood-dots { display: none; }
