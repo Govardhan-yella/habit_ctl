@@ -227,7 +227,6 @@ pre {
 
 /* ---- Widget rail ----------------------------------------- */
 .widget-rail {
-  border-right: 1px solid var(--border);
   background: var(--bg);
   padding: 16px;
   overflow-y: auto;
@@ -237,19 +236,17 @@ pre {
 }
 
 .widget {
-  border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-secondary);
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  transition: background 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
 .widget.flash {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-muted);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
 .widget-title {
@@ -2367,8 +2364,8 @@ body {
   box-shadow: inset 0 -2px 0 0 var(--accent);
 }
 
-/* Rail edge as a hairline */
-.widget-rail { border-right-color: var(--hair); }
+/* Rail edge: seamless (no divider) */
+.widget-rail { border-right: 0; }
 
 /* Elevated card surfaces (widgets, stat cards, routine items) */
 .widget,
@@ -2376,7 +2373,7 @@ body {
 .routine-item {
   border-color: transparent;
   background: var(--surface);
-  box-shadow: inset 0 1px 0 var(--hair), var(--shadow-sm);
+  box-shadow: none;
   transition: background 0.2s var(--ease), box-shadow 0.2s var(--ease),
     transform 0.2s var(--ease);
 }
@@ -2384,30 +2381,27 @@ body {
 .stat-card:hover,
 .routine-item:hover {
   background: var(--surface-2);
-  box-shadow: inset 0 1px 0 var(--hair-strong), 0 10px 26px rgba(5, 7, 18, 0.5);
 }
 .widget.flash {
   border-color: transparent;
-  box-shadow: inset 0 1px 0 var(--hair), 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
-/* Habit rows */
+/* Habit rows — seamless */
 .habit-item {
   border-color: transparent;
   background: var(--surface);
-  box-shadow: inset 0 1px 0 var(--hair), var(--shadow-sm);
+  box-shadow: none;
   transition: background 0.16s var(--ease), box-shadow 0.16s var(--ease),
     transform 0.16s var(--ease);
 }
 .habit-item:hover {
   background: var(--surface-2);
   transform: translateY(-1px);
-  box-shadow: inset 0 1px 0 var(--hair-strong), 0 10px 24px rgba(5, 7, 18, 0.5);
 }
 .habit-item.selected {
-  background: var(--surface-2);
-  box-shadow: inset 3px 0 0 0 var(--accent), inset 0 1px 0 var(--hair),
-    0 10px 24px rgba(5, 7, 18, 0.45);
+  background: var(--surface-3);
+  box-shadow: none;
 }
 
 /* Inputs, selects, textareas — soft inset instead of hard outlines */
@@ -2531,27 +2525,13 @@ textarea:focus {
   color: var(--accent);
 }
 
-/* Widgets: hairline rail, accent only on the small marker */
-.widget {
-  box-shadow: inset 2px 0 0 var(--accent-muted), inset 0 1px 0 var(--hair), var(--shadow-sm);
-}
+/* Widgets: seamless, no rail, no marker */
+.widget { box-shadow: none; }
 .widget-title { justify-content: flex-start; }
 .widget-sub { margin-left: auto; }
-.widget-title::before {
-  content: '▍';
-  margin-right: 0.45em;
-  color: var(--accent);
-  opacity: 0.85;
-}
 
-/* Stats: quiet headers, single accent marker */
+/* Stats: quiet, flat headers */
 .stat-card-header h3 { color: var(--fg-muted); }
-.stat-card-header h3::before {
-  content: '▍';
-  margin-right: 0.4em;
-  color: var(--accent);
-  opacity: 0.8;
-}
 .stat-period { color: var(--fg-muted); }
 
 /* Solid accent fills (no gradients) */
@@ -2559,13 +2539,13 @@ textarea:focus {
 .progress-fill { background: var(--accent); }
 .day-bar { background: var(--accent) !important; }
 .ring-fg {
-  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 55%, transparent));
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 45%, transparent));
   transition: stroke-dashoffset 0.6s var(--ease);
 }
 
 /* Terminal accents */
-.footer-left .terminal-prompt { color: var(--accent-muted); }
-.terminal-block { border-left: 2px solid var(--accent-muted); }
+.footer-left .terminal-prompt { color: var(--fg-muted); }
+.terminal-block { border-left: none; }
 
 /* ---- Motion ------------------------------------------------- */
 @keyframes widgetIn {
