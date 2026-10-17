@@ -114,10 +114,19 @@ export class WidgetRail {
         <span class="rail-title">Dashboard</span>
         <button class="rail-customize" id="rail-customize" title="Customize widgets" aria-label="Customize widgets">⚙</button>
       </div>
-      ${visible.map(c => `<div class="widget widget-${c.size}" id="w-${c.id}" data-widget="${c.id}"></div>`).join('')}
-      ${visible.length ? '' : '<div class="widget-empty">No widgets shown. Tap ⚙ to add some.</div>'}
+      ${visible.map(c => {
+        const name = WIDGET_META.find(m => m.id === c.id)?.name || c.id;
+        return `
+        <div class="widget-slot">
+          <div class="widget widget-${c.size}" id="w-${c.id}" data-widget="${c.id}"></div>
+          <button class="widget-remove" data-remove="${c.id}" title="Hide widget" aria-label="Hide ${name}">✕</button>
+        </div>`;
+      }).join('')}
+      ${visible.length ? '' : '<div class="widget-empty">No widgets shown.</div>'}
+      <button class="rail-add" id="rail-add" title="Add a widget">＋ Add widget</button>
     `;
     this.root.querySelector('#rail-customize')?.addEventListener('click', () => this.openCustomizer());
+    this.root.querySelector('#rail-add')?.addEventListener('click', () => this.openAddWidget());
   }
 
   private persistCfg(): void {
@@ -182,15 +191,56 @@ export class WidgetRail {
     createModal('Customize widgets', content, () => {});
   }
 
-  private applyCfgChange(rerenderList: () => void): void {
+  private applyCfgChange(rerenderList?: () => void): void {
     this.persistCfg();
     this.buildRail();
     this.update();
-    rerenderList();
+    rerenderList?.();
+  }
+
+  private openAddWidget(): void {
+    const hidden = this.cfg.filter(c => !c.visible);
+    if (!hidden.length) { createToast('All widgets are already shown', 'info'); return; }
+    const content = document.createElement('div');
+    content.className = 'wadd';
+    content.innerHTML = `
+      <div class="wadd-hint">Add a widget back to your dashboard:</div>
+      <div class="wadd-list">
+        ${hidden.map(c => {
+          const m = WIDGET_META.find(x => x.id === c.id)!;
+          return `<button class="wadd-item" data-add="${c.id}">
+            <span class="wadd-name">${m.name}</span>
+            <span class="wadd-desc">${m.desc}</span>
+            <span class="wadd-plus">＋</span>
+          </button>`;
+        }).join('')}
+      </div>`;
+    createModal('Add widget', content, () => { /* noop */ });
+    content.querySelectorAll('[data-add]').forEach(btn => btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-add')!;
+      const c = this.cfg.find(x => x.id === id);
+      if (c) {
+        c.visible = true;
+        this.applyCfgChange();
+        createToast('Widget added', 'success');
+      }
+      document.querySelector('.modal-overlay')?.remove();
+    }));
+  }
+
+  private hideWidget(id: string): void {
+    const c = this.cfg.find(x => x.id === id);
+    if (!c) return;
+    c.visible = false;
+    this.applyCfgChange();
+    const name = WIDGET_META.find(m => m.id === id)?.name || 'Widget';
+    createToast(`${name} hidden`, 'info');
   }
 
   /* ── Delegated events ────────────────────────────────────── */
   private onClick = (e: Event): void => {
+    const remove = (e.target as HTMLElement).closest?.('[data-remove]') as HTMLElement | null;
+    if (remove) { this.hideWidget(remove.dataset.remove as string); return; }
     const target = (e.target as HTMLElement).closest?.('[data-act]') as HTMLElement | null;
     if (!target) return;
     const act = target.dataset.act as string;
