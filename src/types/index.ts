@@ -81,6 +81,8 @@ export interface ThemeColors {
   success: string;
   warning: string;
   error: string;
+  accentAlt?: string;
+  info?: string;
   heatmap: HeatmapColors;
 }
 

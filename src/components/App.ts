@@ -42,6 +42,7 @@ export class App {
           <div class="header-left">
             <span class="app-title">habit_ctl</span>
             <span class="app-version">v1.0.0</span>
+            <span class="blk-cursor" aria-hidden="true"></span>
           </div>
           <nav class="app-nav" role="tablist">
             <button class="nav-btn active" data-view="list" role="tab" aria-selected="true">📋 List</button>

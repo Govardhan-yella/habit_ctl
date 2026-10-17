@@ -28,6 +28,10 @@
   --heatmap-3: #3a8ec2;
   --heatmap-4: #7aa2f7;
 
+  /* Multi-accent tokens (overridden per theme at runtime) */
+  --accent-2: #bb9af7;
+  --info: #7dcfff;
+
   /* Surfaces — borderless elevation language */
   --surface: #1e2233;
   --surface-2: #232840;
@@ -2498,3 +2502,152 @@ textarea:focus {
 .insight-delta.up { color: var(--success); }
 .insight-delta.down { color: var(--error); }
 .insight-delta.flat { color: var(--fg-muted); }
+
+/* ============================================================
+   Colourful terminal refresh + motion
+   ============================================================ */
+
+/* Header: gradient wordmark + blinking block cursor */
+.app-title {
+  background: linear-gradient(92deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.blk-cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 5px;
+  vertical-align: -0.18em;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: blink 1.05s steps(1) infinite;
+}
+
+/* Nav: sliding colourful underline */
+.nav-btn {
+  border-radius: var(--radius-sm);
+  background-image: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background-repeat: no-repeat;
+  background-position: 50% 100%;
+  background-size: 0% 2px;
+  transition: background-size 0.25s var(--ease), color 0.18s var(--ease);
+}
+.nav-btn.active {
+  background-size: calc(100% - 18px) 2px;
+  box-shadow: none;
+  color: var(--accent);
+}
+
+/* Widgets: coloured rail stripe + marker */
+.widget {
+  box-shadow: inset 2px 0 0 var(--wc, var(--accent)), inset 0 1px 0 var(--hair), var(--shadow-sm);
+}
+.widget-title { justify-content: flex-start; }
+.widget-sub { margin-left: auto; }
+.widget-title::before {
+  content: '▍';
+  margin-right: 0.45em;
+  color: var(--wc, var(--accent));
+}
+#w-progress { --wc: var(--accent); }
+#w-streaks { --wc: var(--warning); }
+#w-heatmap { --wc: var(--success); }
+#w-timer   { --wc: var(--info); }
+#w-mood    { --wc: var(--accent-2); }
+#w-water   { --wc: var(--info); }
+#w-batch   { --wc: var(--accent); }
+#w-capture { --wc: var(--success); }
+#w-neofetch { --wc: var(--fg-muted); }
+
+/* Stats: colour-coded cards + headers */
+.stat-card { border-top: 2px solid var(--wc, var(--accent)); }
+.stat-card.overview { --wc: var(--accent); }
+.stat-card.streaks { --wc: var(--warning); }
+.stat-card.rate { --wc: var(--success); }
+.stat-card.xp { --wc: var(--accent-2); }
+.stat-card.breakdown { --wc: var(--info); }
+.stat-card.weekly { --wc: var(--accent); }
+.stat-card.insights { --wc: var(--accent-2); }
+.stat-card.achievements { --wc: var(--warning); }
+.stat-card-header h3 { color: var(--wc, var(--fg-muted)); }
+.stat-card-header h3::before {
+  content: '▍';
+  margin-right: 0.4em;
+  opacity: 0.9;
+}
+.stat-period { color: var(--info); }
+
+/* Gradient fills */
+.btn-primary {
+  background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+}
+.progress-fill {
+  background-image: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+.day-bar {
+  background-image: linear-gradient(180deg, var(--accent-2), var(--accent)) !important;
+}
+.ring-fg {
+  filter: drop-shadow(0 0 3px var(--accent));
+  transition: stroke-dashoffset 0.6s var(--ease);
+}
+
+/* Terminal accents */
+.footer-left .terminal-prompt { color: var(--accent-2); }
+.terminal-block { border-left: 2px solid var(--accent); }
+
+/* ---- Motion ------------------------------------------------- */
+@keyframes widgetIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.widget { animation: widgetIn 0.45s var(--ease) both; }
+.widget:nth-child(2) { animation-delay: 0.03s; }
+.widget:nth-child(3) { animation-delay: 0.06s; }
+.widget:nth-child(4) { animation-delay: 0.09s; }
+.widget:nth-child(5) { animation-delay: 0.12s; }
+.widget:nth-child(6) { animation-delay: 0.15s; }
+.widget:nth-child(7) { animation-delay: 0.18s; }
+.widget:nth-child(8) { animation-delay: 0.21s; }
+.widget:nth-child(9) { animation-delay: 0.24s; }
+.widget:nth-child(10) { animation-delay: 0.27s; }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.stat-card { animation: cardIn 0.4s var(--ease) both; }
+
+@keyframes popRing {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.ring-wrap:hover { animation: popRing 0.35s var(--ease); }
+
+body.no-animations .widget,
+body.no-animations .stat-card,
+body.no-animations .ring-wrap:hover,
+body.no-animations .blk-cursor {
+  animation: none !important;
+}
+
+/* Settings: multi-colour theme swatches */
+.theme-preview {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 6px;
+  box-sizing: border-box;
+}
+.theme-swatch {
+  flex: 1;
+  height: 100%;
+  border-radius: 2px;
+  transition: transform 0.18s var(--ease);
+}
+.theme-card:hover .theme-swatch { transform: scaleY(1.08); }
+

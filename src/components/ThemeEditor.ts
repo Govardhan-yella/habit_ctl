@@ -1,20 +1,7 @@
 import { store } from '../stores/appStore';
 import { ThemeColors } from '../types';
+import { mix } from '../utils/color';
 import { createModal, createToast } from './TerminalUI';
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const clean = hex.replace('#', '');
-  const n = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-}
-
-function mix(a: string, b: string, t: number): string {
-  const A = hexToRgb(a); const B = hexToRgb(b);
-  const r = Math.round(A.r + (B.r - A.r) * t);
-  const g = Math.round(A.g + (B.g - A.g) * t);
-  const blue = Math.round(A.b + (B.b - A.b) * t);
-  return '#' + ((1 << 24) + (r << 16) + (g << 8) + blue).toString(16).slice(1);
-}
 
 const FIELDS: Array<{ key: keyof Omit<ThemeColors, 'heatmap'>; label: string }> = [
   { key: 'bg', label: 'Background' },
@@ -22,6 +9,8 @@ const FIELDS: Array<{ key: keyof Omit<ThemeColors, 'heatmap'>; label: string }> 
   { key: 'fg', label: 'Text' },
   { key: 'fgMuted', label: 'Muted text' },
   { key: 'accent', label: 'Accent' },
+  { key: 'accentAlt', label: 'Accent 2' },
+  { key: 'info', label: 'Info' },
   { key: 'accentMuted', label: 'Accent muted' },
   { key: 'border', label: 'Border' },
   { key: 'success', label: 'Success' },
@@ -38,7 +27,7 @@ export function openThemeEditor(): void {
     <div class="form-group"><label>Theme name</label><input type="text" id="te-name" placeholder="My theme" value="Custom Theme"></div>
     <div class="theme-editor-body">
       <div class="theme-editor-fields">
-        ${FIELDS.map(f => `<div class="te-field"><label>${f.label}</label><input type="color" id="te-${f.key}" value="${base[f.key]}"></div>`).join('')}
+        ${FIELDS.map(f => `<div class="te-field"><label>${f.label}</label><input type="color" id="te-${f.key}" value="${base[f.key] || '#000000'}"></div>`).join('')}
       </div>
       <div class="theme-editor-preview" id="te-preview">
         <div class="tep-top"><span class="tep-dot"></span><span class="tep-title">habit_ctl</span></div>
@@ -63,6 +52,8 @@ export function openThemeEditor(): void {
       fg: val('fg'),
       fgMuted: val('fgMuted'),
       accent,
+      accentAlt: val('accentAlt'),
+      info: val('info'),
       accentMuted: val('accentMuted'),
       border: val('border'),
       success: val('success'),

@@ -111,7 +111,9 @@ export class SettingsComponent {
   private themeCard(t: Theme, current: string, custom = false): string {
     const c = t.colors;
     const badge = t.isPro ? '<span class="pro-badge">Pro</span>' : custom ? '<span class="pro-badge custom-badge">Custom</span>' : '';
-    return `<button class="theme-card ${t.id===current?'active':''} ${t.isPro?'pro':''}" data-theme="${t.id}" style="--card-bg:${c.bg};--card-fg:${c.fg};--card-accent:${c.accent}"><div class="theme-preview" style="background:linear-gradient(135deg,${c.heatmap.level1},${c.heatmap.level3},${c.heatmap.level4})"></div><div class="theme-info"><span class="theme-name">${t.name}</span>${badge}</div>${custom?`<span class="theme-delete" data-del="${t.id}" title="Delete theme">✕</span>`:''}</button>`;
+    const swatches = [c.accent, c.accentAlt || c.accent, c.info || c.accent, c.success, c.warning]
+      .map(col => `<span class="theme-swatch" style="background:${col}"></span>`).join('');
+    return `<button class="theme-card ${t.id===current?'active':''} ${t.isPro?'pro':''}" data-theme="${t.id}" style="--card-bg:${c.bg};--card-fg:${c.fg};--card-accent:${c.accent}"><div class="theme-preview" style="background:${c.bg}">${swatches}</div><div class="theme-info"><span class="theme-name">${t.name}</span>${badge}</div>${custom?`<span class="theme-delete" data-del="${t.id}" title="Delete theme">✕</span>`:''}</button>`;
   }
 
   private bindEvents(user: any, settings: UserSettings) {
