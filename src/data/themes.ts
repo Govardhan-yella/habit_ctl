@@ -14,6 +14,18 @@ export const THEMES: Theme[] = [
     isCustom: false, isPro: false
   },
   {
+    id: 'tokyo-night-storm',
+    name: 'Tokyo Storm',
+    colors: {
+      bg: '#24283b', bgSecondary: '#2f334d', fg: '#c0caf5', fgMuted: '#6b7394',
+      accent: '#7aa2f7', accentMuted: '#41568f', border: '#363b55',
+      success: '#9ece6a', warning: '#e0af68', error: '#f7768e',
+      accentAlt: '#bb9af7', info: '#7dcfff',
+      heatmap: { level0: '#282d44', level1: '#34426f', level2: '#4a61a0', level3: '#6382cc', level4: '#7aa2f7' }
+    },
+    isCustom: false, isPro: false
+  },
+  {
     id: 'dracula',
     name: 'Dracula',
     colors: {
@@ -34,6 +46,18 @@ export const THEMES: Theme[] = [
       success: '#a6e3a1', warning: '#f9e2af', error: '#f38ba8',
       accentAlt: '#cba6f7', info: '#89dceb',
       heatmap: { level0: '#24253a', level1: '#33406b', level2: '#4f66a8', level3: '#6d90d8', level4: '#89b4fa' }
+    },
+    isCustom: false, isPro: false
+  },
+  {
+    id: 'catppuccin-macchiato',
+    name: 'Catppuccin Macchiato',
+    colors: {
+      bg: '#24273a', bgSecondary: '#2f334d', fg: '#cad3f5', fgMuted: '#8087a2',
+      accent: '#8aadf4', accentMuted: '#4d5f9e', border: '#363a4f',
+      success: '#a6da95', warning: '#eed49f', error: '#ed8796',
+      accentAlt: '#c6a0f6', info: '#91d7e3',
+      heatmap: { level0: '#2a2d44', level1: '#384b7a', level2: '#5573b4', level3: '#718fd8', level4: '#8aadf4' }
     },
     isCustom: false, isPro: false
   },
@@ -86,6 +110,30 @@ export const THEMES: Theme[] = [
     isCustom: false, isPro: false
   },
   {
+    id: 'ayu-dark',
+    name: 'Ayu Dark',
+    colors: {
+      bg: '#0b0e14', bgSecondary: '#11151c', fg: '#b3b1ad', fgMuted: '#565b66',
+      accent: '#e6b450', accentMuted: '#8a6d33', border: '#1d2433',
+      success: '#aad94c', warning: '#ffb454', error: '#f07178',
+      accentAlt: '#d2a6ff', info: '#59c2ff',
+      heatmap: { level0: '#10141b', level1: '#3a3418', level2: '#6b5a1f', level3: '#b08533', level4: '#e6b450' }
+    },
+    isCustom: false, isPro: false
+  },
+  {
+    id: 'ayu-mirage',
+    name: 'Ayu Mirage',
+    colors: {
+      bg: '#1f2430', bgSecondary: '#242936', fg: '#cccac2', fgMuted: '#707a8c',
+      accent: '#ffcc66', accentMuted: '#a8843f', border: '#2b3241',
+      success: '#bae67e', warning: '#ffa759', error: '#f28779',
+      accentAlt: '#d4bfff', info: '#73d0ff',
+      heatmap: { level0: '#232838', level1: '#4a4a2f', level2: '#7a6a2f', level3: '#c2a04a', level4: '#ffcc66' }
+    },
+    isCustom: false, isPro: false
+  },
+  {
     id: 'rose-pine',
     name: 'Rosé Pine',
     colors: {
@@ -122,14 +170,26 @@ export const THEMES: Theme[] = [
     isCustom: false, isPro: false
   },
   {
-    id: 'ayu-mirage',
-    name: 'Ayu Mirage',
+    id: 'synthwave',
+    name: 'Synthwave',
     colors: {
-      bg: '#1f2430', bgSecondary: '#242936', fg: '#cccac2', fgMuted: '#707a8c',
-      accent: '#ffcc66', accentMuted: '#a8843f', border: '#2b3241',
-      success: '#bae67e', warning: '#ffa759', error: '#f28779',
-      accentAlt: '#d4bfff', info: '#73d0ff',
-      heatmap: { level0: '#232838', level1: '#4a4a2f', level2: '#7a6a2f', level3: '#c2a04a', level4: '#ffcc66' }
+      bg: '#262335', bgSecondary: '#2d2b55', fg: '#f0eff1', fgMuted: '#8b83a8',
+      accent: '#ff7edb', accentMuted: '#9a4f86', border: '#3b2f55',
+      success: '#72f1b8', warning: '#fede5d', error: '#fe4450',
+      accentAlt: '#fede5d', info: '#36f9f6',
+      heatmap: { level0: '#2e2a48', level1: '#6b3f77', level2: '#a8549f', level3: '#e06ac2', level4: '#ff7edb' }
+    },
+    isCustom: false, isPro: false
+  },
+  {
+    id: 'oled-black',
+    name: 'OLED Black',
+    colors: {
+      bg: '#000000', bgSecondary: '#0b0b0b', fg: '#ededed', fgMuted: '#6e6e6e',
+      accent: '#f5f5f5', accentMuted: '#5a5a5a', border: '#1a1a1a',
+      success: '#4ade80', warning: '#fbbf24', error: '#f87171',
+      accentAlt: '#b8b8b8', info: '#d4d4d4',
+      heatmap: { level0: '#0a0a0a', level1: '#2b2b2b', level2: '#4d4d4d', level3: '#8a8a8a', level4: '#f5f5f5' }
     },
     isCustom: false, isPro: false
   },
@@ -137,11 +197,11 @@ export const THEMES: Theme[] = [
     id: 'terminal-green',
     name: 'Terminal Green',
     colors: {
-      bg: '#0a0f0a', bgSecondary: '#101710', fg: '#7ee787', fgMuted: '#3f6b4a',
-      accent: '#4ade80', accentMuted: '#1f6b3a', border: '#1b2b20',
-      success: '#4ade80', warning: '#e3b341', error: '#f85149',
-      accentAlt: '#56d364', info: '#39d353',
-      heatmap: { level0: '#0c130c', level1: '#16321f', level2: '#1f5a33', level3: '#349b52', level4: '#4ade80' }
+      bg: '#000000', bgSecondary: '#0a0a0a', fg: '#00ff00', fgMuted: '#006600',
+      accent: '#00ff00', accentMuted: '#005500', border: '#003300',
+      success: '#00ff00', warning: '#ffff00', error: '#ff0000',
+      accentAlt: '#00ffaa', info: '#00ffff',
+      heatmap: { level0: '#0a0a0a', level1: '#0a3d0a', level2: '#0f6b0f', level3: '#12a812', level4: '#00ff00' }
     },
     isCustom: false, isPro: false
   },
