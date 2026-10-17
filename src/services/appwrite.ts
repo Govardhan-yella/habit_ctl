@@ -11,7 +11,7 @@ class AppwriteService {
   private isConnected = false; private listeners: Set<(connected: boolean) => void> = new Set();
 
   constructor() {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && PROJECT_ID) {
       import('appwrite').then(({ Client, Account, Databases }) => {
         this.client = new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID);
         this.account = new Account(this.client);
@@ -19,6 +19,10 @@ class AppwriteService {
       });
     }
   }
+
+  /** True when VITE_APPWRITE_PROJECT_ID is provided; otherwise cloud features are disabled. */
+  isConfigured(): boolean { return !!PROJECT_ID; }
+
 
   onConnectionChange(listener: (connected: boolean) => void): () => void {
     this.listeners.add(listener);
@@ -28,12 +32,14 @@ class AppwriteService {
   private notify(connected: boolean): void { this.isConnected = connected; this.listeners.forEach(l => l(connected)); }
 
   async initialize(): Promise<void> {
+    if (!this.isConfigured()) { this.notify(false); return; }
     try { await this.account.get(); this.notify(true); } catch { this.notify(false); }
   }
 
   private resubscribeAll(): void { this.subscriptions.forEach(u => { try { u(); } catch {} }); this.subscriptions.clear(); }
 
   subscribe(collectionId: string, callbacks: { onCreate?: (d: any) => void; onUpdate?: (d: any) => void; onDelete?: (d: any) => void }): () => void {
+    if (!this.isConfigured() || !this.client) return () => {};
     const channel = `databases.${DATABASE_ID}.collections.${collectionId}.documents`;
     const unsubscribe = this.client.subscribe(channel, (response: any) => {
       const { events, payload } = response;

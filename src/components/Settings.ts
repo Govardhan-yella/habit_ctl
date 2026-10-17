@@ -22,13 +22,17 @@ export class SettingsComponent {
     w.appendChild(h);
 
     // Account section
+    const cloud = store.cloudConfigured();
     w.appendChild(this.section('Account', user ? `
       <div class="setting-row"><span class="setting-label">Signed in as</span><span class="setting-value">${user.name} (${user.email})</span></div>
       <div class="setting-row"><span class="setting-label">Plan</span><span class="setting-value badge badge-${user.proTier==='free'?'info':user.proTier==='lifetime'?'success':'warning'}">${user.proTier}</span></div>
       <div class="setting-actions"><button class="btn btn-danger btn-sm" id="signout">Sign Out</button></div>
-    ` : `
+    ` : cloud ? `
       <div class="setting-row"><span class="setting-label">Not signed in</span></div>
       <div class="setting-actions"><button class="btn btn-primary btn-sm" id="signin">Sign In</button><button class="btn btn-ghost btn-sm" id="signup">Sign Up</button><button class="btn btn-ghost btn-sm" id="apple">Continue with Apple</button></div>
+    ` : `
+      <div class="setting-row"><span class="setting-label">Not signed in</span></div>
+      <div class="setting-row"><span class="setting-value setting-note">Cloud sign-in isn't configured. Add <code>VITE_APPWRITE_PROJECT_ID</code> (and endpoint) to enable sync. The app works fully offline.</span></div>
     `));
 
     // Theme section
@@ -46,10 +50,11 @@ export class SettingsComponent {
 
     // Sync section
     w.appendChild(this.section('Sync', `
-      <div class="setting-row"><label class="toggle"><input type="checkbox" id="sync-enabled" ${settings.syncEnabled?'checked':''}><span class="toggle-slider"></span></label><span>Cloud Sync</span></div>
+      ${cloud ? '' : '<div class="setting-row"><span class="setting-label">Cloud sync</span><span class="setting-value">not configured</span></div>'}
+      <div class="setting-row"><label class="toggle"><input type="checkbox" id="sync-enabled" ${cloud ? '' : 'disabled'} ${settings.syncEnabled?'checked':''}><span class="toggle-slider"></span></label><span>Cloud Sync</span></div>
       <div class="setting-row"><label class="toggle"><input type="checkbox" id="icloud-sync" ${settings.iCloudSync?'checked':''}><span class="toggle-slider"></span></label><span>iCloud Backup</span></div>
-      <div class="setting-row"><span class="setting-label">Status</span><span class="setting-value">${s.sync.status}${s.sync.lastSync?` • Last: ${new Date(s.sync.lastSync).toLocaleTimeString()}`:''}</span></div>
-      <div class="setting-actions"><button class="btn btn-primary btn-sm" id="sync-now">Sync Now</button><button class="btn btn-ghost btn-sm" id="export">Export Data</button><button class="btn btn-ghost btn-sm" id="import">Import Data</button></div>
+      <div class="setting-row"><span class="setting-label">Status</span><span class="setting-value">${cloud ? s.sync.status : 'offline'}${cloud && s.sync.lastSync?` • Last: ${new Date(s.sync.lastSync).toLocaleTimeString()}`:''}</span></div>
+      <div class="setting-actions">${cloud ? '<button class="btn btn-primary btn-sm" id="sync-now">Sync Now</button>' : ''}<button class="btn btn-ghost btn-sm" id="export">Export</button><button class="btn btn-ghost btn-sm" id="import">Import</button></div>
     `));
 
     // Appearance section

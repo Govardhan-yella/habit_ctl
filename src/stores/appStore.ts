@@ -44,6 +44,8 @@ class AppStore {
   }
 
   isReady(): boolean { return this.ready; }
+  /** True when Appwrite env vars are present; cloud sign-in/sync is unavailable otherwise. */
+  cloudConfigured(): boolean { return appwrite.isConfigured(); }
 
   private async loadFromStorage(): Promise<void> {
     const [habits, routines, completions, shields, themes, user, settings, sync] = await Promise.all([getAllHabits(), getAllRoutines(), getAllCompletions(), getAllShields(), getAllThemes(), getUser(), getSettings(), getSyncState()]);

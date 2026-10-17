@@ -161,9 +161,8 @@ export interface UserSettings {
 export interface StreakData {
   current: number;
   longest: number;
-  totalDays: number;
+  total: number;
   shields: number;
-  lastCompletion?: string;
   isActive: boolean;
 }
 

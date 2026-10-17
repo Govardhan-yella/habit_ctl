@@ -1,3 +1,5 @@
+import type { StreakData } from '../types';
+
 export function formatDate(date: Date, format: 'YYYY-MM-DD' | 'DD/MM/YYYY' | 'MM/DD/YYYY' = 'YYYY-MM-DD'): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -105,7 +107,7 @@ function isScheduledOn(schedule: { type: string; days?: number[] }, date: Date):
   }
 }
 
-export function getStreakData(completions: Map<string, number>, habit: { schedule: { type: string; days?: number[] } }, shields: { usedAt?: string }[]): { current: number; longest: number; total: number; shields: number; isActive: boolean } {
+export function getStreakData(completions: Map<string, number>, habit: { schedule: { type: string; days?: number[] } }, shields: { usedAt?: string }[]): StreakData {
   const shieldCount = shields.filter(s => !s.usedAt).length;
   const doneDates = Array.from(completions.keys()).filter(d => (completions.get(d) || 0) > 0).sort();
   const total = doneDates.length;

@@ -2651,3 +2651,17 @@ body.no-animations .blk-cursor {
 }
 .theme-card:hover .theme-swatch { transform: scaleY(1.08); }
 
+
+/* Settings: cloud-not-configured note */
+.setting-note {
+  font-size: 12px;
+  opacity: 0.7;
+  line-height: 1.5;
+  white-space: normal;
+}
+.setting-note code {
+  background: var(--surface-2);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+}
