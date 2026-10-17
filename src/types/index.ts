@@ -104,6 +104,39 @@ export interface User {
   createdAt: string;
 }
 
+export interface MoodLog {
+  id: string;
+  date: string;
+  mood: string;
+  createdAt: string;
+}
+
+export interface WaterLog {
+  id: string;
+  date: string;
+  glasses: number;
+  createdAt: string;
+}
+
+export interface Note {
+  id: string;
+  text: string;
+  habitId?: string;
+  createdAt: string;
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  mode: HabitMode;
+  target: number;
+  unit?: string;
+  schedule: Schedule;
+  reminders: Reminder[];
+  icon: string;
+  color: string;
+}
+
 export interface UserSettings {
   themeId: string;
   syncEnabled: boolean;
@@ -119,6 +152,8 @@ export interface UserSettings {
   biometricEnabled: boolean;
   vacationMode: boolean;
   vacationEndsAt?: string;
+  customCSS?: string;
+  sortBy?: 'alpha' | 'due' | 'streak' | 'progress' | 'created';
 }
 
 export interface StreakData {
@@ -175,4 +210,8 @@ export interface AppState {
   selectedDate: string;
   searchQuery: string;
   filterMode: 'all' | 'active' | 'archived' | 'today';
+  moods: MoodLog[];
+  waters: WaterLog[];
+  notes: Note[];
+  templates: Template[];
 }

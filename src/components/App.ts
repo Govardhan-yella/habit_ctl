@@ -123,8 +123,15 @@ export class App {
         case 'r': e.preventDefault(); store.setView('routines'); break;
         case 's': e.preventDefault(); store.setView('stats'); break;
         case ',': e.preventDefault(); store.setView('settings'); break;
-        case 'a': e.preventDefault(); this.showHabitForm(); break;
+        case 'a': case 'n': e.preventDefault(); this.showHabitForm(); break;
+        case '/': e.preventDefault(); this.focusSearch(); break;
+        case '?': e.preventDefault(); this.showShortcuts(); break;
+        case 'escape': document.querySelector('.modal-overlay')?.remove(); break;
+        case 'l': e.preventDefault(); store.setView('list'); break;
         case ' ': case 'enter': e.preventDefault(); this.toggleSelectedHabit(); break;
+        default:
+          if (e.key >= '1' && e.key <= '9') { e.preventDefault(); window.dispatchEvent(new CustomEvent('select-habit-index', { detail: parseInt(e.key, 10) - 1 })); }
+          break;
       }
     });
 
@@ -138,9 +145,20 @@ export class App {
     document.body.classList.toggle('no-animations', !s.animations);
     const banner = this.root.querySelector('#vacation-banner') as HTMLElement | null;
     if (banner) banner.hidden = !s.vacationMode;
+    this.applyCustomCss(s.customCSS || '');
     this.updateDateDisplay();
     this.updateSyncStatus();
     this.maybeLock();
+  }
+
+  private applyCustomCss(css: string): void {
+    let styleEl = document.getElementById('habit-custom-css') as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'habit-custom-css';
+      document.head.appendChild(styleEl);
+    }
+    if (styleEl.textContent !== css) styleEl.textContent = css;
   }
 
   private maybeLock() {
@@ -201,6 +219,33 @@ export class App {
   }
 
   private showHabitForm() { openHabitForm(); }
+
+  private focusSearch() {
+    if (store.getState().view !== 'list') store.setView('list');
+    requestAnimationFrame(() => {
+      const input = this.root.querySelector('#habit-search') as HTMLInputElement | null;
+      input?.focus();
+    });
+  }
+
+  private showShortcuts() {
+    const rows: [string, string][] = [
+      ['n / a', 'New habit'],
+      ['/', 'Focus search (list view)'],
+      ['1–9', 'Select habit by position'],
+      ['space / enter', 'Complete next due habit'],
+      ['← / →', 'Previous / next day'],
+      ['l / h', 'List / Heatmap view'],
+      ['r / s', 'Routines / Stats view'],
+      [',', 'Settings'],
+      ['?', 'This help'],
+      ['esc', 'Close dialog'],
+    ];
+    const content = document.createElement('div');
+    content.className = 'shortcuts';
+    content.innerHTML = `<div class="shortcuts-grid">${rows.map(([k, d]) => `<div class="sc-key"><kbd>${k}</kbd></div><div class="sc-desc">${d}</div>`).join('')}</div>`;
+    createModal('Keyboard Shortcuts', content, () => {});
+  }
 
   private showRoutineForm(routine?: any) {
     const content = document.createElement('div'); content.className = 'routine-form';

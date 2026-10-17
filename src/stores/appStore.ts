@@ -1,4 +1,4 @@
-import { Habit, Completion, Shield, Routine, Theme, User, UserSettings, SyncState, AppState, HabitMode } from '../types';
+import { Habit, Completion, Shield, Routine, Theme, User, UserSettings, SyncState, AppState, HabitMode, MoodLog, WaterLog, Note, Template } from '../types';
 import { THEMES, DEFAULT_THEME_ID, getTheme } from '../data/themes';
 import { getTodayString, getDateString, addDays, subDays, getDaysBetween, getStreakData, getHeatmapLevel } from '../utils/date';
 import { saveHabit, getAllHabits, deleteHabit, saveCompletion, getCompletionsByHabit, getAllCompletions, getUnsyncedCompletions, deleteCompletion, saveShield, getShieldsByHabit, getAllShields, saveRoutine, getAllRoutines, deleteRoutine, saveTheme, getAllThemes, deleteTheme, saveUser, getUser, saveSettings, getSettings, saveSyncState, getSyncState, addPendingChange, getPendingChanges, removePendingChange, updatePendingChangeRetries, clearAllData as clearAllDataStorage, exportAllData, importAllData } from '../services/storage';
@@ -7,8 +7,26 @@ import { appwrite } from '../services/appwrite';
 type Listener = (state: AppState) => void;
 
 class AppStore {
-  private state: AppState = { user: null, habits: [], routines: [], completions: [], shields: [], themes: THEMES, theme: THEMES[0], sync: { status: 'idle', pendingChanges: 0 }, view: 'list', selectedDate: getTodayString(), searchQuery: '', filterMode: 'active' };
+  private state: AppState = {
+    user: null,
+    habits: [],
+    routines: [],
+    completions: [],
+    shields: [],
+    themes: THEMES,
+    theme: THEMES[0],
+    sync: { status: 'idle', pendingChanges: 0 },
+    view: 'list',
+    selectedDate: getTodayString(),
+    searchQuery: '',
+    filterMode: 'active',
+    moods: [],
+    waters: [],
+    notes: [],
+    templates: [],
+  };
   private listeners: Set<Listener> = new Set(); private initialized = false; private ready = false;
+  private skips: Set<string> = new Set();
   private settings: UserSettings = { themeId: DEFAULT_THEME_ID, syncEnabled: true, iCloudSync: false, animations: true, hapticFeedback: true, weekStartsOn: 0, dateFormat: 'YYYY-MM-DD', timeFormat: '24h', language: 'en', passcodeEnabled: false, biometricEnabled: false, vacationMode: false };
 
   constructor() { this.applyTheme(this.state.theme); }
@@ -30,8 +48,9 @@ class AppStore {
     const [habits, routines, completions, shields, themes, user, settings, sync] = await Promise.all([getAllHabits(), getAllRoutines(), getAllCompletions(), getAllShields(), getAllThemes(), getUser(), getSettings(), getSyncState()]);
     const themeId = settings?.themeId || DEFAULT_THEME_ID;
     this.settings = settings || this.settings;
-    this.setState({ habits: habits.sort((a, b) => a.order - b.order), routines: routines.sort((a, b) => a.order - b.order), completions, shields, themes: [...THEMES, ...themes.filter(t => t.isCustom)], theme: getTheme(themeId), user, sync: sync || { status: 'idle', pendingChanges: 0 } });
+    this.setState({ habits: habits.sort((a, b) => a.order - b.order), routines: routines.sort((a, b) => a.order - b.order), completions, shields, themes: [...THEMES, ...themes.filter(t => t.isCustom)], theme: getTheme(themeId), user, sync: sync || { status: 'idle', pendingChanges: 0 }, moods: (this.state as any).moods || [], waters: (this.state as any).waters || [], notes: (this.state as any).notes || [], templates: (this.state as any).templates || [] });
     this.applyTheme(getTheme(themeId));
+    this.loadSide();
   }
 
   private async initAppwrite(): Promise<void> {
@@ -88,7 +107,9 @@ class AppStore {
   setSearchQuery(q: string): void { this.setState({ searchQuery: q }); }
   setFilterMode(m: AppState['filterMode']): void { this.setState({ filterMode: m }); }
 
-  getFilteredHabits(): Habit[] { let h = this.state.habits; if (this.state.filterMode === 'active') h = h.filter(x => !x.archivedAt); else if (this.state.filterMode === 'archived') h = h.filter(x => x.archivedAt); else if (this.state.filterMode === 'today') h = h.filter(x => this.isHabitScheduledToday(x)); if (this.state.searchQuery) { const q = this.state.searchQuery.toLowerCase(); h = h.filter(x => x.name.toLowerCase().includes(q)); } return h; }
+  getFilteredHabits(): Habit[] { let h = this.state.habits; if (this.state.filterMode === 'active') h = h.filter(x => !x.archivedAt); else if (this.state.filterMode === 'archived') h = h.filter(x => x.archivedAt); else if (this.state.filterMode === 'today') h = h.filter(x => this.isHabitScheduledToday(x)); if (this.state.searchQuery) { const q = this.state.searchQuery.toLowerCase(); h = h.filter(x => x.name.toLowerCase().includes(q)); } const sort = this.getSettings().sortBy; if (sort) { h = [...h]; switch (sort) { case 'alpha': h.sort((a, b) => a.name.localeCompare(b.name)); break; case 'streak': h.sort((a, b) => this.getHabitStreak(b.id).current - this.getHabitStreak(a.id).current); break; case 'progress': h.sort((a, b) => this.habitProgress(b) - this.habitProgress(a)); break; case 'due': h.sort((a, b) => (this.isHabitScheduledToday(a) ? 0 : 1) - (this.isHabitScheduledToday(b) ? 0 : 1)); break; } } return h; }
+
+  habitProgress(h: Habit): number { const today = getTodayString(); const c = this.state.completions.find(x => x.habitId === h.id && x.date === today); if (!c) return 0; return h.mode === 'checkbox' ? 1 : Math.min(1, c.value / h.target); }
 
   isHabitScheduledOn(h: Habit, date: string): boolean { const d = parseDate(date).getDay(); switch (h.schedule.type) { case 'daily': return true; case 'weekdays': return d >= 1 && d <= 5; case 'custom': return h.schedule.days?.includes(d) ?? false; } return false; }
   isHabitScheduledToday(h: Habit): boolean { return this.isHabitScheduledOn(h, getTodayString()); }
@@ -128,13 +149,57 @@ class AppStore {
   async signUp(email: string, password: string, name: string): Promise<User> { const u = await appwrite.signUpWithEmail(email, password, name); await saveUser(u); this.setState({ user: u }); return u; }
   async signIn(email: string, password: string): Promise<User> { const u = await appwrite.signInWithEmail(email, password); await saveUser(u); this.setState({ user: u }); await this.loadFromStorage(); return u; }
   async signInWithApple(): Promise<User> { const u = await appwrite.signInWithApple(); await saveUser(u); this.setState({ user: u }); await this.loadFromStorage(); return u; }
-  async signOut(): Promise<void> { await appwrite.signOut(); await clearAllDataStorage(); this.setState({ user: null, habits: [], routines: [], completions: [], shields: [], sync: { status: 'offline', pendingChanges: 0 } }); }
+  async signOut(): Promise<void> { await appwrite.signOut(); await clearAllDataStorage(); this.clearSide(); this.setState({ user: null, habits: [], routines: [], completions: [], shields: [], moods: [], waters: [], notes: [], templates: [], sync: { status: 'offline', pendingChanges: 0 } }); }
   async updateProTier(tier: User['proTier'], exp?: string): Promise<void> { if (!this.state.user) return; const u = await appwrite.updateProTier(tier, exp); await saveUser(u); this.setState({ user: u }); }
   async exportData(): Promise<string> { return exportAllData(); }
   async importData(json: string): Promise<void> { await importAllData(json); await this.loadFromStorage(); }
-  async clearAllData(): Promise<void> { await clearAllDataStorage(); this.setState({ user: null, habits: [], routines: [], completions: [], shields: [], sync: { status: 'idle', pendingChanges: 0 } }); }
+  async clearAllData(): Promise<void> { await clearAllDataStorage(); this.clearSide(); this.setState({ user: null, habits: [], routines: [], completions: [], shields: [], moods: [], waters: [], notes: [], templates: [], sync: { status: 'idle', pendingChanges: 0 } }); }
   navigateDate(dir: 'prev' | 'next'): void { const d = parseDate(this.state.selectedDate); this.setSelectedDate(getDateString(dir === 'prev' ? subDays(d, 1) : addDays(d, 1))); }
   goToToday(): void { this.setSelectedDate(getTodayString()); }
+
+  /* ── Side collections: moods, water, notes, templates, skips ── */
+  private loadSide(): void {
+    try {
+      this.setState({
+        moods: JSON.parse(localStorage.getItem('hc-moods') || '[]'),
+        waters: JSON.parse(localStorage.getItem('hc-waters') || '[]'),
+        notes: JSON.parse(localStorage.getItem('hc-notes') || '[]'),
+        templates: JSON.parse(localStorage.getItem('hc-templates') || '[]'),
+      });
+      this.skips = new Set<string>(JSON.parse(localStorage.getItem('hc-skips') || '[]'));
+    } catch { /* ignore */ }
+  }
+  private persistSide(): void {
+    try {
+      localStorage.setItem('hc-moods', JSON.stringify(this.state.moods));
+      localStorage.setItem('hc-waters', JSON.stringify(this.state.waters));
+      localStorage.setItem('hc-notes', JSON.stringify(this.state.notes));
+      localStorage.setItem('hc-templates', JSON.stringify(this.state.templates));
+      localStorage.setItem('hc-skips', JSON.stringify([...this.skips]));
+    } catch { /* ignore */ }
+  }
+  private clearSide(): void {
+    try { ['hc-moods', 'hc-waters', 'hc-notes', 'hc-templates', 'hc-skips'].forEach(k => localStorage.removeItem(k)); } catch { /* ignore */ }
+    this.skips.clear();
+  }
+
+  logMood(mood: string): void { const date = getTodayString(); const m: MoodLog = { id: crypto.randomUUID(), date, mood, createdAt: new Date().toISOString() }; this.setState({ moods: this.state.moods.filter(x => x.date !== date).concat(m) }); this.persistSide(); }
+  getTodayMood(): string | undefined { return this.state.moods.find(x => x.date === getTodayString())?.mood; }
+  getRecentMoods(days = 7): { date: string; mood?: string }[] { const out: { date: string; mood?: string }[] = []; for (let i = days - 1; i >= 0; i--) { const d = getDateString(subDays(new Date(), i)); out.push({ date: d, mood: this.state.moods.find(x => x.date === d)?.mood }); } return out; }
+
+  getTodayWater(): number { return this.state.waters.find(x => x.date === getTodayString())?.glasses || 0; }
+  waterGoal(): number { return 8; }
+  setWater(glasses: number): void { const g = Math.max(0, Math.min(30, glasses)); const date = getTodayString(); const existing = this.state.waters.find(x => x.date === date); const nw: WaterLog = existing ? { ...existing, glasses: g } : { id: crypto.randomUUID(), date, glasses: g, createdAt: new Date().toISOString() }; this.setState({ waters: existing ? this.state.waters.map(x => x.id === nw.id ? nw : x) : [...this.state.waters, nw] }); this.persistSide(); }
+  adjustWater(delta: number): void { this.setWater(this.getTodayWater() + delta); }
+
+  addNote(text: string, habitId?: string): void { const t = text.trim(); if (!t) return; const n: Note = { id: crypto.randomUUID(), text: t, habitId, createdAt: new Date().toISOString() }; this.setState({ notes: [n, ...this.state.notes].slice(0, 200) }); this.persistSide(); }
+  deleteNote(id: string): void { this.setState({ notes: this.state.notes.filter(n => n.id !== id) }); this.persistSide(); }
+
+  saveTemplate(t: Omit<Template, 'id'>): Template { const nt: Template = { ...t, id: crypto.randomUUID() }; this.setState({ templates: [...this.state.templates, nt] }); this.persistSide(); return nt; }
+  deleteTemplate(id: string): void { this.setState({ templates: this.state.templates.filter(t => t.id !== id) }); this.persistSide(); }
+
+  isSkipped(habitId: string, date: string): boolean { return this.skips.has(`${habitId}|${date}`); }
+  toggleSkip(habitId: string, date: string): void { const k = `${habitId}|${date}`; if (this.skips.has(k)) this.skips.delete(k); else this.skips.add(k); this.persistSide(); this.notify(); }
 }
 
 function parseDate(s: string): Date { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }

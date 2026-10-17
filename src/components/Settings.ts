@@ -12,6 +12,10 @@ export class SettingsComponent {
   destroy() { this.u(); this.up(); }
   render() {
     const s = store.getState(); const user = s.user; const settings = store.getSettings();
+    const active = document.activeElement as HTMLInputElement | null;
+    const activeId = active && this.c.contains(active) ? active.id : '';
+    const selStart = activeId ? active!.selectionStart : null;
+    const selEnd = activeId ? active!.selectionEnd : null;
     this.c.innerHTML = '';
     const w = document.createElement('div'); w.className = 'settings-wrapper';
     const h = document.createElement('div'); h.className = 'settings-header';
@@ -56,6 +60,8 @@ export class SettingsComponent {
       <div class="setting-row"><span class="setting-label">Week Starts</span><select id="week-start"><option value="0" ${settings.weekStartsOn===0?'selected':''}>Sunday</option><option value="1" ${settings.weekStartsOn===1?'selected':''}>Monday</option></select></div>
       <div class="setting-row"><span class="setting-label">Date Format</span><select id="date-fmt"><option value="YYYY-MM-DD" ${settings.dateFormat==='YYYY-MM-DD'?'selected':''}>YYYY-MM-DD</option><option value="DD/MM/YYYY" ${settings.dateFormat==='DD/MM/YYYY'?'selected':''}>DD/MM/YYYY</option><option value="MM/DD/YYYY" ${settings.dateFormat==='MM/DD/YYYY'?'selected':''}>MM/DD/YYYY</option></select></div>
       <div class="setting-row"><span class="setting-label">Time Format</span><select id="time-fmt"><option value="24h" ${settings.timeFormat==='24h'?'selected':''}>24h</option><option value="12h" ${settings.timeFormat==='12h'?'selected':''}>12h</option></select></div>
+      <div class="setting-row"><span class="setting-label">Sort habits</span><select id="sort-by"><option value="" ${!settings.sortBy?'selected':''}>Default</option><option value="alpha" ${settings.sortBy==='alpha'?'selected':''}>A–Z</option><option value="due" ${settings.sortBy==='due'?'selected':''}>Due today</option><option value="streak" ${settings.sortBy==='streak'?'selected':''}>Streak</option><option value="progress" ${settings.sortBy==='progress'?'selected':''}>Progress</option></select></div>
+      <div class="setting-col"><label class="setting-label" for="custom-css">Custom CSS</label><textarea id="custom-css" class="custom-css" rows="4" spellcheck="false" placeholder=".habit-item { border-radius: 8px }">${(settings.customCSS || '').replace(/</g, '&lt;')}</textarea></div>
     `));
 
     // Privacy section
@@ -72,6 +78,15 @@ export class SettingsComponent {
 
     this.c.appendChild(w);
     this.bindEvents(user, settings);
+    if (activeId) {
+      const el = this.c.querySelector('#' + activeId) as HTMLInputElement | null;
+      if (el) {
+        el.focus();
+        if (typeof selStart === 'number' && 'setSelectionRange' in el) {
+          try { el.setSelectionRange(selStart, selStart); } catch { /* ignore */ }
+        }
+      }
+    }
   }
 
   private section(title: string, content: string): HTMLElement {
@@ -121,6 +136,8 @@ export class SettingsComponent {
     this.c.querySelector('#week-start')?.addEventListener('change', e=>store.updateSettings({weekStartsOn:parseInt((e.target as HTMLSelectElement).value) as 0|1}));
     this.c.querySelector('#date-fmt')?.addEventListener('change', e=>store.updateSettings({dateFormat:(e.target as HTMLSelectElement).value as any}));
     this.c.querySelector('#time-fmt')?.addEventListener('change', e=>store.updateSettings({timeFormat:(e.target as HTMLSelectElement).value as any}));
+    this.c.querySelector('#sort-by')?.addEventListener('change', e=>store.updateSettings({sortBy:((e.target as HTMLSelectElement).value || undefined) as any}));
+    this.c.querySelector('#custom-css')?.addEventListener('input', e=>store.updateSettings({customCSS:(e.target as HTMLTextAreaElement).value}));
     this.c.querySelector('#passcode')?.addEventListener('change', e =>{
       const on = (e.target as HTMLInputElement).checked;
       if (on) {

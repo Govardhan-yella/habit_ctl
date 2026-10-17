@@ -18,14 +18,22 @@ export class HabitListComponent {
   private timerHabitId?: string;
   private timerStart = 0;
   private restoreSearchFocus = false;
+  private onSelectIndex: (e: Event) => void;
 
   constructor(container: HTMLElement) {
     this.container = container;
+    this.onSelectIndex = (e: Event) => {
+      const idx = (e as CustomEvent).detail as number;
+      const habits = store.getFilteredHabits();
+      const h = habits[idx];
+      if (h) { this.selectedId = h.id; this.render(); }
+    };
+    window.addEventListener('select-habit-index', this.onSelectIndex);
     this.unsubscribe = store.subscribe(() => this.render());
     this.render();
   }
 
-  destroy() { this.unsubscribe(); if (this.timerId) clearInterval(this.timerId); }
+  destroy() { this.unsubscribe(); if (this.timerId) clearInterval(this.timerId); window.removeEventListener('select-habit-index', this.onSelectIndex); }
 
   render() {
     const state = store.getState();

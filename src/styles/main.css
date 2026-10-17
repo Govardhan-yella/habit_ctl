@@ -2225,3 +2225,63 @@ body.no-animations *::after {
 .ach-done { font-size: 0.7rem; color: var(--accent); }
 .ach-progress { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem; }
 .ach-count { font-size: 0.7rem; color: var(--fg-muted); }
+
+/* ---- New widgets: shared bits ----------------------------- */
+.widget-stat { font-size: 0.7rem; color: var(--fg-muted); }
+.preset-row { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.mini-bars { display: flex; align-items: flex-end; gap: 0.2rem; height: 1.75rem; }
+.mini-bar { flex: 1; min-height: 2px; background: var(--accent-muted); border-radius: 2px 2px 0 0; }
+
+/* ---- Mood widget ------------------------------------------ */
+.mood-buttons { display: flex; gap: 0.3rem; }
+.mood-btn { flex: 1; font-size: 1.1rem; padding: 0.25rem 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; filter: grayscale(0.6); transition: filter 0.15s ease, border-color 0.15s ease; }
+.mood-btn:hover { filter: grayscale(0); }
+.mood-btn.active { filter: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.mood-dots { display: flex; gap: 0.25rem; font-size: 0.85rem; }
+.mood-dot { flex: 1; text-align: center; color: var(--fg-muted); opacity: 0.5; }
+.mood-dot.active { opacity: 1; }
+
+/* ---- Water widget ----------------------------------------- */
+.water-bar { height: 0.5rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.water-bar > div { height: 100%; background: var(--accent); transition: width 0.2s ease; }
+.water-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+.water-cups { font-size: 0.8rem; letter-spacing: -1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Batch widget ----------------------------------------- */
+.batch-list { display: flex; flex-direction: column; gap: 0.25rem; }
+.batch-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; cursor: pointer; }
+.batch-row input { accent-color: var(--accent); }
+.batch-actions { display: flex; gap: 0.4rem; }
+.batch-actions .btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* ---- Quick capture widget --------------------------------- */
+.capture-form { display: grid; grid-template-columns: 1fr auto; gap: 0.35rem; }
+.capture-input, .capture-select { font-family: var(--font-mono); font-size: 0.72rem; padding: 0.3rem 0.4rem; background: var(--bg-secondary); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; }
+.capture-input { grid-column: 1 / -1; }
+.capture-select { grid-column: 1; }
+.note-list { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.25rem; }
+.note-row { display: flex; align-items: baseline; gap: 0.35rem; font-size: 0.72rem; }
+.note-time { color: var(--fg-muted); flex: 0 0 auto; }
+.note-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.note-text em { color: var(--fg-muted); font-style: normal; }
+.note-del { background: none; border: none; color: var(--fg-muted); cursor: pointer; font-size: 0.7rem; padding: 0 0.15rem; }
+.note-del:hover { color: var(--error); }
+
+/* ---- Customization: settings extras ----------------------- */
+.setting-col { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem 0; border-top: 1px solid var(--border); }
+.custom-css { width: 100%; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.5; padding: 0.5rem; background: var(--bg-secondary); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; resize: vertical; }
+.custom-css:focus { outline: none; border-color: var(--accent); }
+
+/* ---- Customization: icon picker --------------------------- */
+.icon-picker { display: grid; grid-template-columns: repeat(10, 1fr); gap: 0.2rem; margin-top: 0.35rem; }
+.icon-pick { font-size: 1rem; line-height: 1; padding: 0.25rem 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 5px; cursor: pointer; filter: grayscale(0.5); transition: filter 0.12s ease, border-color 0.12s ease; }
+.icon-pick:hover { filter: none; }
+.icon-pick.active { filter: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+/* ---- Customization: form footer --------------------------- */
+.form-spacer { flex: 1; }
+
+/* ---- Customization: shortcuts help ------------------------ */
+.shortcuts-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 1rem; align-items: center; font-size: 0.78rem; }
+.sc-key kbd { display: inline-block; min-width: 1.4rem; text-align: center; padding: 0.1rem 0.4rem; background: var(--bg-secondary); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.68rem; }
+.sc-desc { color: var(--fg-muted); }
