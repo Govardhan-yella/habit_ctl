@@ -1,0 +1,13 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Paths that never contain real secrets"
+paths = [
+  # Lockfiles are large and noisy
+  '''(^|/)package-lock\.json$''',
+  # Example env file is intentionally committed with empty values
+  '''(^|/)\.env\.example$''',
+  # Generated icons / static assets
+  '''(^|/)public/''',
+]
