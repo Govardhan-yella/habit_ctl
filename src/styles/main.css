@@ -18,7 +18,7 @@
   --fg-muted: #565f89;
   --accent: #7aa2f7;
   --accent-muted: #3d59a1;
-  --border: #414868;
+  --border: rgba(146, 168, 224, 0.09);
   --success: #9ece6a;
   --warning: #e0af68;
   --error: #f7768e;
@@ -28,11 +28,20 @@
   --heatmap-3: #3a8ec2;
   --heatmap-4: #7aa2f7;
 
-  --font-mono: 'Sometype Mono', ui-monospace, SFMono-Regular,
+  /* Surfaces — borderless elevation language */
+  --surface: #1e2233;
+  --surface-2: #232840;
+  --surface-3: #272d47;
+  --hair: rgba(255, 255, 255, 0.05);
+  --hair-strong: rgba(255, 255, 255, 0.08);
+  --ring: rgba(122, 162, 247, 0.55);
+
+  --font-mono: 'Ubuntu Mono', ui-monospace, SFMono-Regular,
     Menlo, Consolas, monospace;
-  --radius: 6px;
-  --radius-sm: 4px;
-  --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow-sm: 0 1px 2px rgba(5, 7, 18, 0.4);
+  --shadow: 0 16px 40px rgba(5, 7, 18, 0.55);
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -47,8 +56,9 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
+  letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -2319,3 +2329,172 @@ body.no-animations *::after {
 .preset-label { font-size: 0.62rem; color: var(--fg-muted); width: 3rem; }
 .focus-mode.running { color: var(--accent); }
 .widget-sm .widget-stat, .widget-sm .mood-dots { display: none; }
+
+/* ============================================================
+   Visual refresh — borderless surfaces, tinted depth
+   ============================================================ */
+
+/* Ambient background: cool radial tint + fine grain */
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1100px 620px at 74% -12%, rgba(122, 162, 247, 0.075), transparent 62%),
+    radial-gradient(820px 520px at 6% 108%, rgba(61, 89, 161, 0.10), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+
+/* Header: translucent glass with a hairline edge instead of a box */
+.app-header {
+  background: rgba(30, 34, 51, 0.72);
+  backdrop-filter: blur(14px) saturate(1.25);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom: 1px solid var(--hair);
+}
+
+.app-title {
+  letter-spacing: 0.02em;
+}
+
+/* Nav: no boxed borders — active state is an accent underline */
+.nav-btn { border-color: transparent; }
+.nav-btn.active {
+  background: transparent;
+  color: var(--accent);
+  border-radius: 0;
+  box-shadow: inset 0 -2px 0 0 var(--accent);
+}
+
+/* Rail edge as a hairline */
+.widget-rail { border-right-color: var(--hair); }
+
+/* Elevated card surfaces (widgets, stat cards, routine items) */
+.widget,
+.stat-card,
+.routine-item {
+  border-color: transparent;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  box-shadow: inset 0 1px 0 var(--hair), var(--shadow-sm);
+  transition: background 0.2s var(--ease), box-shadow 0.2s var(--ease),
+    transform 0.2s var(--ease);
+}
+.widget:hover,
+.stat-card:hover,
+.routine-item:hover {
+  background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+  box-shadow: inset 0 1px 0 var(--hair-strong), 0 10px 26px rgba(5, 7, 18, 0.5);
+}
+.widget.flash {
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 var(--hair), 0 0 0 2px var(--accent);
+}
+
+/* Habit rows */
+.habit-item {
+  border-color: transparent;
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 var(--hair), var(--shadow-sm);
+  transition: background 0.16s var(--ease), box-shadow 0.16s var(--ease),
+    transform 0.16s var(--ease);
+}
+.habit-item:hover {
+  background: var(--surface-2);
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 var(--hair-strong), 0 10px 24px rgba(5, 7, 18, 0.5);
+}
+.habit-item.selected {
+  background: var(--surface-2);
+  box-shadow: inset 3px 0 0 0 var(--accent), inset 0 1px 0 var(--hair),
+    0 10px 24px rgba(5, 7, 18, 0.45);
+}
+
+/* Inputs, selects, textareas — soft inset instead of hard outlines */
+input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']),
+select,
+textarea {
+  border-color: transparent;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--hair);
+  transition: box-shadow 0.18s var(--ease), background 0.18s var(--ease);
+}
+input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px rgba(122, 162, 247, 0.16);
+}
+
+/* Badges as filled chips, no outlines */
+.rate-badge,
+.level-badge {
+  border-color: transparent;
+  background: rgba(122, 162, 247, 0.15);
+}
+.level-badge { background: rgba(224, 175, 104, 0.16); }
+
+/* Ghost buttons read as soft surfaces */
+.btn-ghost { border-color: transparent; background: var(--hair); }
+.btn-ghost:hover { background: var(--hair-strong); }
+
+/* Period tabs */
+.period-tab { border-color: transparent; }
+
+/* Modals, toasts, terminal blocks float on tinted shadow */
+.modal,
+.toast,
+.terminal-block {
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 var(--hair), var(--shadow);
+}
+
+/* Motion + press feedback */
+.btn {
+  transition: transform 0.12s var(--ease), background 0.18s var(--ease),
+    border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { box-shadow: 0 6px 18px rgba(122, 162, 247, 0.22); }
+.btn-primary:hover { box-shadow: 0 9px 26px rgba(122, 162, 247, 0.3); }
+
+/* Keyboard focus ring */
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* Scrollbars blend into surfaces */
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-muted);
+  background-clip: padding-box;
+}
+
+/* ---- Stats: insights ------------------------------------- */
+.insights { grid-column: 1 / -1; }
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.insight {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  box-shadow: inset 0 1px 0 var(--hair);
+}
+.insight-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+}
+.insight-value { font-size: 18px; font-weight: 700; color: var(--fg); }
+.insight-sub { font-size: 10px; color: var(--fg-muted); }
+.insight-delta { font-size: 11px; font-weight: 700; }
+.insight-delta.up { color: var(--success); }
+.insight-delta.down { color: var(--error); }
+.insight-delta.flat { color: var(--fg-muted); }

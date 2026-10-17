@@ -22,7 +22,7 @@ export class StatsComponent {
     w.appendChild(g);
     const ch = document.createElement('div'); ch.className = 'stats-charts';
     ch.append(this.breakdown(hs,cs), this.weekly(cs));
-    w.appendChild(ch); w.appendChild(this.achievements()); this.c.appendChild(w);
+    w.appendChild(ch); w.appendChild(this.insights(hs,cs)); w.appendChild(this.achievements()); this.c.appendChild(w);
   }
   private ws(): 0|1 { return store.getSettings().weekStartsOn; }
   private range() { const t = new Date(); const e = getDateString(t); let st: Date; switch(this.period){case'week':st=getWeekStart(t, this.ws());break;case'month':st=getMonthStart(t);break;case'year':st=new Date(t.getFullYear(),0,1);break;default:st=new Date('2020-01-01');} return {start:getDateString(st),end:e}; }
@@ -37,5 +37,42 @@ export class StatsComponent {
   breakdown(hs: Habit[], cs: Completion[]) { const r=this.range(); const stats=hs.map(h=>{const hc=cs.filter(x=>x.habitId===h.id&&x.date>=r.start&&x.date<=r.end); let e=0; for(let d=new Date(r.start);d<=new Date(r.end);d=addDays(d,1))if(this.scheduled(h,d))e++; const c=hc.length; const rt=e?(c/e)*100:0; const st=store.getHabitStreak(h.id); return {h,c,e,rt,st};}).sort((a,b)=>b.rt-a.rt); const card=document.createElement('div'); card.className='stat-card breakdown'; card.innerHTML=`<div class="stat-card-header"><h3>Breakdown</h3></div><div class="stat-card-body"><div class="breakdown-list">${stats.slice(0,10).map(({h,c,e,rt,st})=>`<div class="breakdown-item"><div class="breakdown-info"><span class="breakdown-color" style="background:${h.color}"></span><span>${h.name}</span></div><div class="breakdown-rate"><span class="rate ${rt===100?'perfect':rt>=75?'good':rt>=50?'ok':'low'}">${rt.toFixed(0)}%</span><span class="detail">${c}/${e} • 🔥 ${st.current}</span></div></div>`).join('')}</div></div>`; return card; }
   weekly(cs: Completion[]) { const r=this.range(); const ws=getWeekStart(new Date(r.end), this.ws()); const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; const counts:Record<number,number>={}; for(let i=0;i<7;i++){const d=addDays(ws,i); counts[i]=cs.filter(x=>x.date===getDateString(d)).length;} const max=Math.max(...Object.values(counts),1); const card=document.createElement('div'); card.className='stat-card weekly'; card.innerHTML=`<div class="stat-card-header"><h3>This Week</h3></div><div class="stat-card-body"><div class="weekly-chart">${days.map((d,i)=>`<div class="weekly-day"><span class="day-label">${d}</span><div class="day-bar-wrapper"><div class="day-bar" style="height:${counts[i]/max*100}%;background:var(--accent)"></div></div><span class="day-count">${counts[i]}</span></div>`).join('')}</div></div>`; return card; }
   achievements() { const list=computeAchievements(store.getState()); const unlocked=list.filter(isUnlocked).length; const card=document.createElement('div'); card.className='stat-card achievements'; card.innerHTML=`<div class="stat-card-header"><h3>Achievements</h3><span class="stat-period">${unlocked}/${list.length}</span></div><div class="stat-card-body"><div class="achievement-grid">${list.map(a=>{const u=isUnlocked(a);return `<div class="achievement ${u?'unlocked':''}" title="${a.description}"><span class="ach-icon">${a.icon}</span><span class="ach-name">${a.name}</span><span class="ach-desc">${a.description}</span>${u?'<span class="ach-done">✓ unlocked</span>':`<div class="ach-progress">${createProgressBar((a.progress/a.target)*100).outerHTML}<span class="ach-count">${a.progress}/${a.target}</span></div>`}</div>`;}).join('')}</div></div>`; return card; }
+  insights(hs: Habit[], cs: Completion[]) {
+    const s = store.getState(); const r = this.range(); const len = this.daysInRange();
+    const names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const dow = [0,0,0,0,0,0,0];
+    for (const c of cs) if (c.date>=r.start && c.date<=r.end) dow[new Date(c.date+'T00:00:00').getDay()]++;
+    let best=-1, worst=-1;
+    for (let i=0;i<7;i++){ if(dow[i]>0){ if(best<0||dow[i]>dow[best]) best=i; if(worst<0||dow[i]<dow[worst]) worst=i; } }
+    let perfect=0;
+    for (let d=new Date(r.start); d<=new Date(r.end); d=addDays(d,1)) {
+      const ds=getDateString(d); const due=hs.filter(h=>this.scheduled(h,d));
+      if (due.length && due.every(h=>cs.some(c=>c.habitId===h.id&&c.date===ds))) perfect++;
+    }
+    const prevEnd = getDateString(addDays(new Date(r.start), -1));
+    const prevStart = getDateString(addDays(new Date(prevEnd), -(len-1)));
+    const curDone = cs.filter(x=>x.date>=r.start&&x.date<=r.end).length;
+    const prevDone = cs.filter(x=>x.date>=prevStart&&x.date<=prevEnd).length;
+    const delta = prevDone ? ((curDone-prevDone)/prevDone)*100 : null;
+    const moodVal: Record<string,number> = { great:5, good:4, ok:3, low:2, bad:1 };
+    const moods = s.moods.filter((m:any)=>m.date>=r.start&&m.date<=r.end);
+    const moodAvg = moods.length ? moods.reduce((a:number,m:any)=>a+(moodVal[m.mood]||3),0)/moods.length : 0;
+    const moodEmoji = moodAvg>=4.5?'😄':moodAvg>=3.5?'🙂':moodAvg>=2.5?'😐':moodAvg>=1.5?'😕':moodAvg>0?'😢':'—';
+    const waters = s.waters.filter((w:any)=>w.date>=r.start&&w.date<=r.end);
+    const waterAvg = waters.length ? (waters.reduce((a:number,w:any)=>a+(w.count||0),0)/waters.length) : 0;
+    const maxCur = hs.reduce((m,h)=>Math.max(m, store.getHabitStreak(h.id).current), 0);
+    const deltaHtml = delta===null ? '<span class="insight-delta flat">new</span>' : `<span class="insight-delta ${delta>1?'up':delta<-1?'down':'flat'}">${delta>0?'▲':delta<0?'▼':'–'} ${Math.abs(delta).toFixed(0)}%</span>`;
+    const card = document.createElement('div'); card.className = 'stat-card insights';
+    card.innerHTML = `<div class="stat-card-header"><h3>Insights</h3><span class="stat-period">${this.period}</span></div><div class="stat-card-body"><div class="insight-grid">
+      <div class="insight"><span class="insight-label">vs previous</span><span class="insight-value">${curDone}</span>${deltaHtml}</div>
+      <div class="insight"><span class="insight-label">Best day</span><span class="insight-value">${best>=0?names[best]:'—'}</span><span class="insight-sub">${best>=0?dow[best]+' done':'no data'}</span></div>
+      <div class="insight"><span class="insight-label">Hardest day</span><span class="insight-value">${worst>=0?names[worst]:'—'}</span><span class="insight-sub">${worst>=0?dow[worst]+' done':'no data'}</span></div>
+      <div class="insight"><span class="insight-label">Perfect days</span><span class="insight-value">${perfect}</span><span class="insight-sub">all habits done</span></div>
+      <div class="insight"><span class="insight-label">Longest streak</span><span class="insight-value">🔥 ${maxCur}</span><span class="insight-sub">current</span></div>
+      <div class="insight"><span class="insight-label">Avg mood</span><span class="insight-value">${moodEmoji} ${moodAvg?moodAvg.toFixed(1):'—'}</span><span class="insight-sub">${moods.length} logged</span></div>
+      <div class="insight"><span class="insight-label">Avg water</span><span class="insight-value">💧 ${waterAvg?waterAvg.toFixed(1):'—'}</span><span class="insight-sub">glasses/day</span></div>
+    </div></div>`;
+    return card;
+  }
 }
 export function createStats(c: HTMLElement) { return new StatsComponent(c); }

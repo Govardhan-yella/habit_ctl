@@ -15,7 +15,6 @@ export class SettingsComponent {
     const active = document.activeElement as HTMLInputElement | null;
     const activeId = active && this.c.contains(active) ? active.id : '';
     const selStart = activeId ? active!.selectionStart : null;
-    const selEnd = activeId ? active!.selectionEnd : null;
     this.c.innerHTML = '';
     const w = document.createElement('div'); w.className = 'settings-wrapper';
     const h = document.createElement('div'); h.className = 'settings-header';

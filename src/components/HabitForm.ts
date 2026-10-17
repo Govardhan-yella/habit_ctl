@@ -35,10 +35,6 @@ export function openHabitForm(habit?: Habit): void {
 
   createModal(isEdit ? 'Edit Habit' : 'New Habit', content, () => {});
 
-  const $ = <T extends HTMLElement>(sel: string) => content.querySelector(sel) as T;
-  const modeEl = () => content.querySelector('#h-mode') as HTMLSelectElement;
-  const schedEl = () => content.querySelector('#h-sched') as HTMLSelectElement;
-
   function syncModeVisibility(): void {
     const show = (content.querySelector('#h-mode') as HTMLSelectElement).value !== 'checkbox';
     (content.querySelector('#target-group') as HTMLElement).style.display = show ? 'block' : 'none';
