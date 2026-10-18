@@ -435,7 +435,7 @@ pre {
   height: 15px;
   border-radius: 2px;
   background: var(--heatmap-0);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px var(--hair-strong);
 }
 
 .gh-cell.gh-empty {
@@ -1462,6 +1462,7 @@ input[type='color'] {
   height: 12px;
   border-radius: 2px;
   background: var(--heatmap-0);
+  box-shadow: inset 0 0 0 1px var(--hair-strong);
   cursor: pointer;
   outline: none;
   transition: transform 0.08s var(--ease), box-shadow 0.08s var(--ease);
@@ -2613,6 +2614,14 @@ textarea:focus {
   filter: drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 45%, transparent));
   transition: stroke-dashoffset 0.6s var(--ease);
 }
+
+/* Even colour spread: draw on more of each theme's palette so no single
+   hue dominates. */
+.water-bar > div { background: var(--info); }
+.xp-mini-bar > div { background: var(--accent-2); }
+.xp-bar .progress-fill { background: var(--accent-2); }
+.focus-mode.running { color: var(--info); }
+.routine-progress .progress-fill { background: var(--accent-2); }
 
 /* Terminal accents */
 .footer-left .terminal-prompt { color: var(--fg-muted); }

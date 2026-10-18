@@ -56,10 +56,10 @@ export function openThemeEditor(): void {
       warning: val('warning'),
       error: val('error'),
       heatmap: {
-        level0: bgSecondary,
-        level1: mix(bgSecondary, accent, 0.25),
-        level2: mix(bgSecondary, accent, 0.5),
-        level3: mix(bgSecondary, accent, 0.75),
+        level0: mix(bgSecondary, accent, 0.18),
+        level1: mix(bgSecondary, accent, 0.38),
+        level2: mix(bgSecondary, accent, 0.60),
+        level3: mix(bgSecondary, accent, 0.80),
         level4: accent,
       },
     };

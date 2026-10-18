@@ -1,7 +1,7 @@
 import { Habit, Completion, Shield, Routine, Theme, User, UserSettings, SyncState, AppState, HabitMode, MoodLog, WaterLog, Note, Template } from '../types';
 import { THEMES, DEFAULT_THEME_ID, getTheme } from '../data/themes';
 import { getTodayString, getDateString, addDays, subDays, getDaysBetween, getStreakData, getHeatmapLevel } from '../utils/date';
-import { mix, rgba } from '../utils/color';
+import { mix, rgba, heatRamp } from '../utils/color';
 import { saveHabit, getAllHabits, deleteHabit, saveCompletion, getCompletionsByHabit, getAllCompletions, getUnsyncedCompletions, deleteCompletion, saveShield, getShieldsByHabit, getAllShields, saveRoutine, getAllRoutines, deleteRoutine, saveTheme, getAllThemes, deleteTheme, saveUser, getUser, saveSettings, getSettings, saveSyncState, getSyncState, addPendingChange, getPendingChanges, removePendingChange, updatePendingChangeRetries, clearAllData as clearAllDataStorage, exportAllData, importAllData } from '../services/storage';
 import { appwrite } from '../services/appwrite';
 
@@ -93,7 +93,43 @@ class AppStore {
     await this.loadFromStorage();
   }
 
-  private applyTheme(theme: Theme): void { const r = document.documentElement, c = theme.colors; r.style.setProperty('--bg', c.bg); r.style.setProperty('--bg-secondary', c.bgSecondary); r.style.setProperty('--fg', c.fg); r.style.setProperty('--fg-muted', c.fgMuted); r.style.setProperty('--accent', c.accent); r.style.setProperty('--accent-muted', c.accentMuted); r.style.setProperty('--border', rgba(c.fg, 0.09)); r.style.setProperty('--success', c.success); r.style.setProperty('--warning', c.warning); r.style.setProperty('--error', c.error); r.style.setProperty('--heatmap-0', c.heatmap.level0); r.style.setProperty('--heatmap-1', c.heatmap.level1); r.style.setProperty('--heatmap-2', c.heatmap.level2); r.style.setProperty('--heatmap-3', c.heatmap.level3); r.style.setProperty('--heatmap-4', c.heatmap.level4); r.style.setProperty('--accent-2', c.accentAlt || c.accent); r.style.setProperty('--info', c.info || c.accent); r.style.setProperty('--ring', rgba(c.accent, 0.45)); r.style.setProperty('--surface', c.bgSecondary); r.style.setProperty('--surface-2', mix(c.bgSecondary, c.fg, 0.06)); r.style.setProperty('--surface-3', mix(c.bgSecondary, c.fg, 0.12)); r.style.setProperty('--hair', rgba(c.fg, 0.06)); r.style.setProperty('--hair-strong', rgba(c.fg, 0.10)); document.body.dataset.theme = theme.id; const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', c.bg); }
+  private applyTheme(theme: Theme): void {
+    const r = document.documentElement;
+    const c = theme.colors;
+    const set = (k: string, v: string) => r.style.setProperty(k, v);
+
+    set('--bg', c.bg);
+    set('--bg-secondary', c.bgSecondary);
+    set('--fg', c.fg);
+    set('--fg-muted', c.fgMuted);
+    set('--accent', c.accent);
+    set('--accent-muted', c.accentMuted);
+    set('--accent-2', c.accentAlt || c.accent);
+    set('--info', c.info || c.accent);
+    set('--border', rgba(c.fg, 0.09));
+    set('--success', c.success);
+    set('--warning', c.warning);
+    set('--error', c.error);
+    set('--ring', rgba(c.accent, 0.45));
+    set('--surface', c.bgSecondary);
+    set('--surface-2', mix(c.bgSecondary, c.fg, 0.06));
+    set('--surface-3', mix(c.bgSecondary, c.fg, 0.12));
+    set('--hair', rgba(c.fg, 0.06));
+    set('--hair-strong', rgba(c.fg, 0.10));
+
+    // Heatmap always derives from the theme's own accent so every theme gets its own
+    // colour and the base cell stays visible against the surface.
+    const [h0, h1, h2, h3, h4] = heatRamp(c.bgSecondary, c.accent);
+    set('--heatmap-0', h0);
+    set('--heatmap-1', h1);
+    set('--heatmap-2', h2);
+    set('--heatmap-3', h3);
+    set('--heatmap-4', h4);
+
+    document.body.dataset.theme = theme.id;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', c.bg);
+  }
 
   private resolveTheme(id: string): Theme { return this.state.themes.find(t => t.id === id) || getTheme(id); }
   setTheme(id: string): void { const t = this.resolveTheme(id); this.setState({ theme: t }); this.applyTheme(t); void this.persistSetting({ themeId: id }); }
