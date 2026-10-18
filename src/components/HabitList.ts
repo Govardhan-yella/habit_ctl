@@ -65,6 +65,26 @@ export class HabitListComponent {
       const list = document.createElement('div'); list.className = 'habit-list';
       habits.forEach((h: Habit) => list.appendChild(this.createItem(h, canLog, selectedDate)));
       this.container.appendChild(list);
+      // Daily progress for today's scheduled habits (under the list)
+      const today = getTodayString();
+      const sched = store.getState().habits.filter(h => !h.archivedAt && store.isHabitScheduledOn(h, today));
+      let done = 0;
+      for (const h of sched) {
+        const c = store.getState().completions.find(x => x.habitId === h.id && x.date === today);
+        const isDone = h.mode === 'checkbox' ? !!c : !!(c && c.value >= h.target);
+        if (isDone) done++;
+      }
+      const total = sched.length;
+      const pct = total ? done / total : 0;
+      const cells = 10;
+      const filled = Math.min(cells, Math.round(pct * cells));
+      const showCursor = pct < 1;
+      const empty = Math.max(0, cells - filled - (showCursor ? 1 : 0));
+      const bar = `<div class="list-progress" aria-live="polite"><span class="list-prompt"><span class="terminal-prompt">$</span> habits --today</span><span class="list-bar">[${'█'.repeat(filled)}${showCursor ? '<span class="cb-cursor">█</span>' : ''}${'░'.repeat(empty)}]</span><span class="list-pct">${Math.round(pct * 100)}% <span class="list-count">${done}/${total}</span></span></div>`;
+      const wrap = document.createElement('div');
+      wrap.className = 'list-progress-wrap';
+      wrap.innerHTML = bar;
+      this.container.appendChild(wrap);
     }
 
     if (this.restoreSearchFocus) {
