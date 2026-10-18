@@ -232,7 +232,24 @@ pre {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+}
+.widget-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+}
+.widget-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.widget-row .widget-slot {
+  flex: 1 1 50%;
+  min-width: 0;
 }
 
 .widget {
@@ -2570,8 +2587,26 @@ body.no-animations *::after {
 .wcfg-foot { display: flex; justify-content: flex-end; }
 
 /* ---- Widget rail: per-widget remove + add button ---------- */
-.widget-slot { position: relative; display: flex; }
-.widget-slot > .widget { flex: 1; min-width: 0; }
+.widget-slot {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex: 1 1 100%;
+  transition: transform 0.16s var(--ease), opacity 0.16s var(--ease);
+}
+.widget-slot.slot-sm {
+  flex: 1 1 calc(50% - 5px);
+}
+.widget-slot.slot-md {
+  flex: 1 1 100%;
+}
+.widget-slot.slot-lg {
+  flex: 1 1 100%;
+}
+.widget-slot > .widget {
+  flex: 1;
+  min-width: 0;
+}
 .widget-remove {
   position: absolute;
   top: 6px;
@@ -2594,6 +2629,62 @@ body.no-animations *::after {
 .widget-slot:hover .widget-remove,
 .widget-remove:focus-visible { opacity: 1; }
 .widget-remove:hover { color: var(--error, #ff6b6b); background: var(--hair-strong, var(--surface-3)); }
+
+.widget-slot.dragging {
+  opacity: 0.5;
+}
+.widget-slot.drop-before::before,
+.widget-slot.drop-after::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  z-index: 3;
+}
+.widget-slot.drop-after::after {
+  top: auto;
+  bottom: -4px;
+}
+.widget-slot.row-divider {
+  flex: 1 1 100%;
+  height: 0;
+  padding: 0;
+  margin: -4px 0;
+  border: none;
+  background: transparent;
+}
+.widget-handle {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 9px;
+  line-height: 1;
+  cursor: grab;
+  opacity: 0;
+  user-select: none;
+  z-index: 2;
+  transition: opacity 0.15s var(--ease), background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.widget-slot:hover .widget-handle,
+.widget-slot:focus-within .widget-handle {
+  opacity: 0.7;
+}
+.widget-slot:active .widget-handle {
+  cursor: grabbing;
+}
 
 .rail-add {
   width: 100%;
