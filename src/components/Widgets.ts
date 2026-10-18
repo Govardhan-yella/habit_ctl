@@ -382,8 +382,28 @@ export class WidgetRail {
       case 'timer-break-preset': this.setBreakMin(Number(target.dataset.min)); break;
       case 'batch-complete': this.batchApply(true); break;
       case 'batch-skip': this.batchApply(false); break;
+      case 'timer-custom': this.openTimerCustom(); break;
     }
   };
+
+  private openTimerCustom(): void {
+    const content = document.createElement('div');
+    content.className = 'wcfg-timer';
+    content.innerHTML = `
+      <div class="form-group"><label>Focus presets (min, comma separated)</label><input type="text" id="tc-focus" value="${this.timer.focusMin}" placeholder="15,25,45"></div>
+      <div class="form-group"><label>Break presets (min, comma separated)</label><input type="text" id="tc-break" value="${this.timer.breakMin}" placeholder="5,10,15"></div>`;
+    createModal('Customize timer', content, () => { /* noop */ });
+    const focus = content.querySelector('#tc-focus') as HTMLInputElement;
+    const brk = content.querySelector('#tc-break') as HTMLInputElement;
+    focus.addEventListener('change', () => {
+      const v = parseInt(focus.value, 10);
+      if (!isNaN(v)) this.timer.focusMin = v;
+    });
+    brk.addEventListener('change', () => {
+      const v = parseInt(brk.value, 10);
+      if (!isNaN(v)) this.timer.breakMin = v;
+    });
+  }
 
   private onKeyDown = (e: KeyboardEvent): void => {
     if ((e.target as HTMLElement).id === 'capture-input' && e.key === 'Enter') {
@@ -581,17 +601,20 @@ export class WidgetRail {
     const history = size === 'lg'
       ? `<div class="focus-history"><span class="fh-label">Today</span><div class="fh-bar"><div style="width:${Math.min(100, (st.focusMin / 120) * 100)}%"></div></div><span class="fh-val">${st.focusMin}m</span></div>`
       : '';
+    const presetFocus = [15, 25, 45, 50, 90].map(m => `<button class="btn btn-sm ${this.timer.focusMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-focus-preset" data-min="${m}">${m}m</button>`).join('');
+    const presetBreak = [5, 10, 15, 20, 30].map(m => `<button class="btn btn-sm ${this.timer.breakMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-break-preset" data-min="${m}">${m}m</button>`).join('');
     el.innerHTML = `
       <span class="widget-title">Focus timer${size === 'lg' ? ` <span class="widget-sub">${st.focusSessions} sessions</span>` : ''}</span>
       <div class="focus-mode ${this.timer.running ? 'running' : ''}">${label} · ${mm}:${ss}</div>
-      ${size === 'sm' ? '' : `<div class="widget-stat">Today: ${st.focusMin}m focus · ${st.focusSessions} session${st.focusSessions === 1 ? '' : 's'} · ${st.breakSessions} break${st.breakSessions === 1 ? '' : 's'}</div>`}
+      ${size !== 'sm' ? `<div class="widget-stat">Today: ${st.focusMin}m focus · ${st.focusSessions} session${st.focusSessions === 1 ? '' : 's'} · ${st.breakSessions} break${st.breakSessions === 1 ? '' : 's'}</div>` : ''}
       ${history}
-      ${size === 'sm' ? '' : `<div class="preset-row preset-labelled"><span class="preset-label">Focus</span>${[15, 25, 45].map(m => `<button class="btn btn-sm ${this.timer.focusMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-focus-preset" data-min="${m}">${m}m</button>`).join('')}</div>`}
-      ${size === 'sm' ? '' : `<div class="preset-row preset-labelled"><span class="preset-label">Break</span>${[5, 10, 15].map(m => `<button class="btn btn-sm ${this.timer.breakMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-break-preset" data-min="${m}">${m}m</button>`).join('')}</div>`}
+      <div class="preset-row preset-labelled"><span class="preset-label">Focus</span>${presetFocus}</div>
+      <div class="preset-row preset-labelled"><span class="preset-label">Break</span>${presetBreak}</div>
       <div class="focus-actions">
         <button class="btn btn-sm btn-primary" data-act="timer-toggle">${this.timer.running ? 'Pause' : 'Start'}</button>
         <button class="btn btn-sm btn-ghost" data-act="timer-reset">Reset</button>
-        ${size === 'sm' ? '' : `<button class="btn btn-sm btn-ghost" data-act="timer-switch">${this.timer.mode === 'focus' ? '→ Break' : '→ Focus'}</button>`}
+        <button class="btn btn-sm btn-ghost" data-act="timer-switch">${this.timer.mode === 'focus' ? '→ Break' : '→ Focus'}</button>
+        <button class="btn btn-sm btn-ghost" data-act="timer-custom" title="Customize timer presets">⋯</button>
       </div>`;
   }
 
