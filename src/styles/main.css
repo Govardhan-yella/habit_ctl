@@ -2617,11 +2617,16 @@ textarea:focus {
 
 /* Even colour spread: draw on more of each theme's palette so no single
    hue dominates. */
+.current-date strong { color: var(--accent-2); }
+.health-sync-badge { color: var(--info); border-color: var(--info); }
+.day-bar { background: var(--accent-2) !important; }
 .water-bar > div { background: var(--info); }
 .xp-mini-bar > div { background: var(--accent-2); }
 .xp-bar .progress-fill { background: var(--accent-2); }
 .focus-mode.running { color: var(--info); }
 .routine-progress .progress-fill { background: var(--accent-2); }
+.ach-done { color: var(--accent-2); }
+.sb-best { color: var(--accent-2); }
 
 /* Terminal accents */
 .footer-left .terminal-prompt { color: var(--fg-muted); }
