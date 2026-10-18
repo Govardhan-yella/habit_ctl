@@ -1,7 +1,7 @@
 import { Habit, Completion, Shield, Routine, Theme, User, UserSettings, SyncState, AppState, HabitMode, MoodLog, WaterLog, Note, Template } from '../types';
 import { THEMES, DEFAULT_THEME_ID, getTheme } from '../data/themes';
 import { getTodayString, getDateString, addDays, subDays, getDaysBetween, getStreakData, getHeatmapLevel } from '../utils/date';
-import { mix, rgba, heatRamp } from '../utils/color';
+import { mix, rgba, heatRamp, isDark } from '../utils/color';
 import { saveHabit, getAllHabits, deleteHabit, saveCompletion, getCompletionsByHabit, getAllCompletions, getUnsyncedCompletions, deleteCompletion, saveShield, getShieldsByHabit, getAllShields, saveRoutine, getAllRoutines, deleteRoutine, saveTheme, getAllThemes, deleteTheme, saveUser, getUser, saveSettings, getSettings, saveSyncState, getSyncState, addPendingChange, getPendingChanges, removePendingChange, updatePendingChangeRetries, clearAllData as clearAllDataStorage, exportAllData, importAllData } from '../services/storage';
 import { appwrite } from '../services/appwrite';
 
@@ -98,24 +98,30 @@ class AppStore {
     const c = theme.colors;
     const set = (k: string, v: string) => r.style.setProperty(k, v);
 
+    // Body text stays neutral (near-white on dark themes, near-black on light ones);
+    // the theme's accent carries the colour in headings and highlights.
+    const dark = isDark(c.bg);
+    const fg = dark ? '#f5f6fa' : '#101216';
+    const fgMuted = mix(c.bg, fg, dark ? 0.55 : 0.5);
+
     set('--bg', c.bg);
     set('--bg-secondary', c.bgSecondary);
-    set('--fg', c.fg);
-    set('--fg-muted', c.fgMuted);
+    set('--fg', fg);
+    set('--fg-muted', fgMuted);
     set('--accent', c.accent);
     set('--accent-muted', c.accentMuted);
     set('--accent-2', c.accentAlt || c.accent);
     set('--info', c.info || c.accent);
-    set('--border', rgba(c.fg, 0.09));
+    set('--border', rgba(fg, 0.1));
     set('--success', c.success);
     set('--warning', c.warning);
     set('--error', c.error);
     set('--ring', rgba(c.accent, 0.45));
     set('--surface', c.bgSecondary);
-    set('--surface-2', mix(c.bgSecondary, c.fg, 0.06));
-    set('--surface-3', mix(c.bgSecondary, c.fg, 0.12));
-    set('--hair', rgba(c.fg, 0.06));
-    set('--hair-strong', rgba(c.fg, 0.10));
+    set('--surface-2', mix(c.bgSecondary, fg, 0.06));
+    set('--surface-3', mix(c.bgSecondary, fg, 0.12));
+    set('--hair', rgba(fg, 0.06));
+    set('--hair-strong', rgba(fg, 0.10));
 
     // Heatmap always derives from the theme's own accent so every theme gets its own
     // colour and the base cell stays visible against the surface.

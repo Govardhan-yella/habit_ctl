@@ -2628,6 +2628,22 @@ textarea:focus {
 .ach-done { color: var(--accent-2); }
 .sb-best { color: var(--accent-2); }
 
+/* Headings & key highlights carry the accent; body copy stays neutral */
+.app-title,
+.widget-title,
+.section-title,
+.modal-title,
+.terminal-block-title,
+.stat-card-header h3,
+.habit-detail-section h4,
+.theme-category h4,
+.heatmap-command,
+.routines-command,
+.stats-command,
+.settings-command {
+  color: var(--accent);
+}
+
 /* Terminal accents */
 .footer-left .terminal-prompt { color: var(--fg-muted); }
 .terminal-block { border-left: none; }

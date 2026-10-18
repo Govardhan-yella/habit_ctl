@@ -32,3 +32,18 @@ export function heatRamp(surface: string, accent: string): [string, string, stri
     accent,
   ];
 }
+
+export function luminance(hex: string): number {
+  const { r, g, b } = hexToRgb(hex);
+  const f = (v: number) => {
+    const n = v / 255;
+    return n <= 0.03928 ? n / 12.92 : Math.pow((v / 255 + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+
+/** True when the colour is dark enough that text on it should be white. */
+export function isDark(hex: string): boolean {
+  return luminance(hex) < 0.5;
+}
+
