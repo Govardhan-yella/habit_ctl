@@ -109,24 +109,126 @@ export class WidgetRail {
   /* ── Rail construction & customization ───────────────────── */
   private buildRail(): void {
     const visible = this.cfg.filter(c => c.visible);
+    const order: string[] = [];
+    let i = 0;
+    while (i < visible.length) {
+      const c = visible[i];
+      if (c.size === 'sm') {
+        const next = visible[i + 1];
+        if (next && next.size === 'sm') {
+          order.push(`row:${c.id}:${next.id}`);
+          i += 2;
+        } else {
+          order.push(`row:${c.id}`);
+          i += 1;
+        }
+      } else {
+        order.push(c.id);
+        i += 1;
+      }
+    }
+
+    const html = order
+      .map(entry => {
+        if (entry.startsWith('row:')) {
+          const ids = entry.slice(4).split(':');
+          return `<div class="widget-row">${ids
+            .filter(Boolean)
+            .map(id => this.renderSlot(id))
+            .join('')}</div>`;
+        }
+        return this.renderSlot(entry);
+      })
+      .join('');
+
     this.root.innerHTML = `
       <div class="rail-head">
         <span class="rail-title">Dashboard</span>
         <button class="rail-customize" id="rail-customize" title="Customize widgets" aria-label="Customize widgets">⚙</button>
       </div>
-      ${visible.map(c => {
-        const name = WIDGET_META.find(m => m.id === c.id)?.name || c.id;
-        return `
-        <div class="widget-slot">
-          <div class="widget widget-${c.size}" id="w-${c.id}" data-widget="${c.id}"></div>
-          <button class="widget-remove" data-remove="${c.id}" title="Hide widget" aria-label="Hide ${name}">✕</button>
-        </div>`;
-      }).join('')}
+      <div class="widget-grid" id="widget-grid">${html}</div>
       ${visible.length ? '' : '<div class="widget-empty">No widgets shown.</div>'}
       <button class="rail-add" id="rail-add" title="Add a widget">＋ Add widget</button>
     `;
     this.root.querySelector('#rail-customize')?.addEventListener('click', () => this.openCustomizer());
     this.root.querySelector('#rail-add')?.addEventListener('click', () => this.openAddWidget());
+    this.bindDragAndDrop();
+  }
+
+  private renderSlot(id: string): string {
+    const c = this.cfg.find(x => x.id === id);
+    if (!c) return '';
+    const name = WIDGET_META.find(m => m.id === c.id)?.name || c.id;
+    const sz = c.size || 'md';
+    return `
+      <div class="widget-slot slot-${sz}" draggable="true" data-wid="${c.id}">
+        <button class="widget-handle" aria-hidden="true" title="Reorder widget">≡</button>
+        <div class="widget widget-${sz}" id="w-${c.id}" data-widget="${c.id}"></div>
+        <button class="widget-remove" data-remove="${c.id}" title="Hide widget" aria-label="Hide ${name}">✕</button>
+      </div>`;
+  }
+
+  private bindDragAndDrop(): void {
+    const slots = Array.from(this.root.querySelectorAll('.widget-slot[data-wid]')) as HTMLElement[];
+    let dragged: HTMLElement | null = null;
+    slots.forEach(el => {
+      el.addEventListener('dragstart', (e: DragEvent) => {
+        dragged = el;
+        el.classList.add('dragging');
+        e.dataTransfer?.setData('text/plain', el.dataset.wid || '');
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'move';
+        }
+      });
+      el.addEventListener('dragend', () => {
+        dragged = null;
+        el.classList.remove('dragging');
+        slots.forEach(s => s.classList.remove('drop-before', 'drop-after'));
+      });
+      el.addEventListener('dragover', (e: DragEvent) => {
+        if (!dragged || dragged === el) return;
+        e.preventDefault();
+        const rect = el.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        el.classList.remove('drop-before', 'drop-after');
+        if ((e.clientY - rect.top) < rect.height / 2) {
+          el.classList.add('drop-before');
+        } else {
+          el.classList.add('drop-after');
+        }
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      });
+      el.addEventListener('dragleave', () => {
+        el.classList.remove('drop-before', 'drop-after');
+      });
+      el.addEventListener('drop', (e: DragEvent) => {
+        if (!dragged || dragged === el) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const srcId = dragged.dataset.wid || e.dataTransfer?.getData('text/plain') || '';
+        const dstId = el.dataset.wid || '';
+        if (!srcId || !dstId || srcId === dstId) return;
+        const before = el.classList.contains('drop-before');
+        this.reorderWidgets(srcId, dstId, before);
+        el.classList.remove('drop-before', 'drop-after');
+      });
+    });
+  }
+
+  private reorderWidgets(srcId: string, dstId: string, before: boolean): void {
+    const order = this.cfg.filter(c => c.visible).map(c => c.id);
+    const sIdx = order.indexOf(srcId);
+    const dIdx = order.indexOf(dstId);
+    if (sIdx < 0 || dIdx < 0) return;
+    const ids = order.filter(id => id !== srcId);
+    let ins = ids.indexOf(dstId);
+    if (!before && ins >= 0) ins += 1;
+    if (ins < 0) ins = ids.length;
+    ids.splice(ins, 0, srcId);
+    const newOrder = ids;
+    const byId = new Map(this.cfg.map(c => [c.id, c]));
+    this.cfg = newOrder.map(id => byId.get(id)!).concat(this.cfg.filter(c => !c.visible));
+    this.applyCfgChange();
   }
 
   private persistCfg(): void {
