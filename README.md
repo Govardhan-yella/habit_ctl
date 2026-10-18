@@ -1,94 +1,89 @@
-# habitctl
+# habit_ctl
 
-> Run your habits like services. Local-first. No account. No ads. No AI.
+> Run your habits like services. A local-first, terminal-style habit tracker for developers and minimalists.
 
-A habit tracker that feels like the command line you already live in.
+`habit_ctl` is a single-page web app that looks and feels like your terminal. Everything is stored locally in IndexedDB by default — no account required. Optional cloud sync is available via Appwrite.
 
-**Current:** Web app (React + TypeScript + IndexedDB)  
-**Planned:** iOS (SwiftUI) → Android → Windows/Mac (Tauri)
+## Features
 
----
+- **Terminal aesthetic** — monospace UI, single-accent themes, minimal chrome.
+- **11 built-in themes** plus a custom theme editor.
+- **Habit tracking** — checkbox and counter habits, custom schedules (daily / weekdays / selected days), targets, archives.
+- **Streaks & shields** — streak calculation with earned shields to protect progress.
+- **Heatmap, stats & achievements** — yearly heatmap, completion rates, XP/levels, insights.
+- **Routines** — group habits into ordered routines.
+- **Dashboard widgets** — progress ring, streaks, heatmap, timer, mood, water, batch actions, quick capture, neofetch.
+- **Local-first & offline** — installable PWA, works with no network.
+- **Optional sync** — Appwrite-backed accounts and sync (disabled until configured).
+- **Extras** — passcode lock, custom CSS, reminders/notifications, JSON export/import.
 
-## Philosophy
+## Tech stack
 
-- **Local-first** — all data lives in your browser's IndexedDB (web) or device storage (mobile). No sign-up, no server.
-- **Export your data** — JSON file, yours to keep, importable anywhere.
-- **No dark patterns** — no nagging, no streaks weaponised, no endless engagement loop.
-- **Open source** — MIT license. Fork it, extend it, ship it.
-- **Quiet by default** — monospaced, minimal, dark-first. Seven themes included.
+- [TypeScript](https://www.typescriptlang.org/) (strict) + [Vite](https://vitejs.dev/)
+- Vanilla DOM components (no framework)
+- [idb](https://github.com/jakearchibald/idb) for IndexedDB persistence
+- [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) for the service worker + manifest
+- [Appwrite](https://appwrite.io/) (optional) for auth + cloud sync
+- [Vitest](https://vitest.dev/) for tests
 
----
+## Getting started
 
-## Tech
-
-| Layer | Choice |
-|-------|--------|
-| Web framework | React 18 + TypeScript + Vite |
-| Browser storage | IndexedDB via `idb` |
-| Font | JetBrains Mono (Google Fonts) |
-| Themes | 7 built-in (Tokyo Night, Dracula, Catppuccin Mocha, Gruvbox Dark, One Dark, GitHub Dark, Light) |
-| Deploy target | GitHub Pages / Vercel (free) |
-
----
-
-## Setup
+Prerequisites: **Node.js 18+** (see `.nvmrc`).
 
 ```bash
-cd web
 npm install
-npm run dev
+npm run dev        # http://localhost:3000
 ```
 
-Open `http://localhost:3000`.
+## Scripts
 
----
+| Script              | Description                          |
+| ------------------- | ------------------------------------ |
+| `npm run dev`       | Start the dev server on port 3000    |
+| `npm run build`     | Type-check and build to `dist/`      |
+| `npm run preview`   | Preview the production build         |
+| `npm run test`      | Run the test suite once              |
+| `npm run test:watch`| Run tests in watch mode              |
+| `npm run lint`      | Lint `src/` with ESLint              |
+| `npm run typecheck` | Type-check without emitting          |
 
-## Data model
+## Configuration
 
-See `shared/types.ts` for the canonical schema — used by web, iOS, Android, and desktop.
+The app is fully functional without any configuration. To enable account sign-in and cloud sync, copy `.env.example` to `.env` and fill it in:
 
-Core entities:
-- **Habit** — name, tracking mode, optional colour/icon/target/reminder
-- **Routine** — named group of habit IDs (Morning, Workout, Evening, …)
-- **CheckIn** — one per habit per day (checkbox mode), or a value (counter/number/health/time)
-- **Streak** — current, longest, shield dates, vacation freeze
-- **UserProgress** — XP, level, total check-ins, achievement IDs
+```bash
+cp .env.example .env
+```
 
----
+| Variable                   | Required | Description                              |
+| -------------------------- | -------- | ---------------------------------------- |
+| `VITE_APPWRITE_ENDPOINT`   | No       | Appwrite endpoint (defaults to cloud)    |
+| `VITE_APPWRITE_PROJECT_ID` | For sync | Appwrite project ID                       |
 
-## Features (v0.1.0 web)
+When `VITE_APPWRITE_PROJECT_ID` is empty, cloud features are hidden/disabled and the app stays local-only.
 
-| Feature | Status |
-|---------|--------|
-| 5 tracking modes | ✅ checkbox, counter, number, health (manual), time (pomodoro) |
-| Habit CRUD | ✅ add / toggle / delete |
-| Today view | ✅ all active habits, one tap to log |
-| Streaks | ✅ per-habit, displayed inline |
-| Theme switching | ✅ 7 themes, persisted to localStorage |
-| Local-first | ✅ IndexedDB, works offline |
-| JetBrains Mono | ✅ throughout |
+## Project structure
 
-## Deferred to later
+```
+src/
+  components/   # DOM UI components (App shell, HabitList, Stats, Settings, Widgets, ...)
+  services/     # storage (IndexedDB), appwrite, pwa, reminders
+  stores/       # appStore — state, actions, persistence
+  data/         # themes, achievements
+  utils/        # date + color helpers
+  types/        # shared TypeScript types
+  styles/       # main.css
+public/         # static assets (icons, favicon)
+```
 
-- Routines
-- Streak shields
-- Contribution heatmap
-- Reminders (browser notifications)
-- Stats / XP / achievements
-- Export / import JSON
-- Vacation mode
-- Apple Watch companion
-- Live Activity / Dynamic Island
-- Siri / Shortcuts
-- iCloud / cloud sync
-- Apple Health sync
-- Widgets
-- Passcode / biometric lock
-- Additional languages
-- iOS / Android / desktop apps
+## Data & privacy
 
----
+All data lives in your browser (IndexedDB) unless you explicitly enable Appwrite sync. Export/import is available in Settings for backups. Never commit a real `.env`.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). For security issues, see [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT © Govardhan Yella
+[MIT](LICENSE) © Govardhan Yella

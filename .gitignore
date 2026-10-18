@@ -1,27 +1,43 @@
 # Dependencies
-node_modules/
-web/node_modules/
+node_modules
 
-# Build outputs
-web/dist/
-web/.vite/
+# Build output
+dist
+dist-ssr
+*.tsbuildinfo
+
+# Vite
+.vite
+*.local
+
+# Environment / secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa*
+.npmrc
+.netrc
 
 # Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# OS
+# Test / lint caches
+coverage/
+.eslintcache
+
+# Editors & OS
 .DS_Store
 Thumbs.db
-
-# Editor
-.vscode/
 .idea/
-
-# Local env
-*.local
-.env
-.env.local
-.env.*.local
+.vscode/
+*.swp

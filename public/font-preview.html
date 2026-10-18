@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>habit_ctl — Font Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Fira+Code:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Chakra+Petch:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Sometype+Mono:wght@400;500;600;700&family=Exo+2:wght@400;500;600;700&family=Azeret+Mono:wght@400;500;600;700&family=Titillium+Web:wght@400;600;700&family=Inconsolata:wght@400;500;600;700&family=Red+Hat+Display:wght@400;500;600;700&family=Red+Hat+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600;700&family=Bricolage+Grotesque:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500;600;700&family=Reddit+Mono:wght@400;500;600;700&family=Fragment+Mono:wght@400&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1b26; --bg2: #24283b; --fg: #c0caf5; --muted: #565f89;
+    --accent: #7aa2f7; --border: #414868; --success: #9ece6a; --warn: #e0af68; --err: #f7768e;
+    --sans: 'Space Grotesk', sans-serif; --mono: 'IBM Plex Mono', monospace;
+    --size: 15px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #16161e; color: var(--fg); font-family: var(--mono); }
+  header.top { position: sticky; top: 0; z-index: 10; background: #16161e; border-bottom: 1px solid var(--border); padding: 14px 22px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  header.top h1 { font-family: var(--sans); font-size: 17px; margin: 0; color: var(--accent); font-weight: 700; }
+  header.top .hint { font-size: 11px; color: var(--muted); }
+  header.top .size { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc(100vh - 56px); }
+  .gallery { border-right: 1px solid var(--border); padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: calc(100vh - 56px); }
+  .gallery h2 { font-family: var(--sans); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 6px 0 2px; }
+  .combo { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; cursor: pointer; background: #1b1c26; transition: .15s; }
+  .combo:hover { border-color: var(--accent); }
+  .combo.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .combo .name { font-family: var(--sans); font-weight: 600; font-size: 13px; }
+  .combo .tags { font-size: 10px; color: var(--muted); margin: 2px 0 6px; }
+  .combo .sample { font-size: 13px; color: var(--fg); }
+  .combo .sample .num { color: var(--accent); }
+  .preview { padding: 28px; overflow-y: auto; max-height: calc(100vh - 56px); }
+  .preview .pane { max-width: 760px; margin: 0 auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); overflow: hidden; }
+  .pane-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg2); }
+  .pane-title { font-family: var(--sans); font-weight: 700; color: var(--accent); }
+  .pane-title small { color: var(--muted); font-weight: 400; font-family: var(--mono); margin-left: 6px; }
+  .pane-nav { display: flex; gap: 6px; }
+  .pane-nav span { font-size: 11px; color: var(--muted); padding: 4px 8px; border-radius: 4px; }
+  .pane-nav span.on { color: var(--accent); border: 1px solid var(--border); }
+  .pane-body { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+  .habit { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg2); }
+  .habit .ico { font-size: 18px; }
+  .habit .info { flex: 1; }
+  .habit .hname { font-family: var(--sans); font-weight: 600; font-size: 15px; }
+  .habit .meta { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+  .habit .meta .hi { color: var(--warn); }
+  .chip { font-family: var(--mono); font-size: 9px; border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: var(--muted); }
+  .btn { font-family: var(--mono); font-size: 12px; padding: 6px 12px; border-radius: 4px; border: 1px solid var(--accent); background: var(--accent); color: var(--bg); cursor: pointer; }
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 6px; }
+  .stat { border: 1px solid var(--border); border-radius: 6px; padding: 12px; background: var(--bg2); text-align: center; }
+  .stat b { font-family: var(--mono); font-size: 20px; color: var(--accent); display: block; }
+  .stat span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .para { font-size: var(--size); line-height: 1.65; color: var(--fg); margin-top: 10px; }
+  .para .mono { font-family: var(--mono); }
+  label.size { display: flex; align-items: center; gap: 6px; }
+  input[type=range] { width: 120px; }
+  .copy { margin-top: 14px; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; background: #1b1c26; font-size: 11px; color: var(--muted); }
+  .copy code { color: var(--fg); }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .gallery { max-height: none; border-right: none; border-bottom: 1px solid var(--border); } .preview { max-height: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>habit_ctl · Font Lab</h1>
+  <span class="hint">click a combo to preview it below</span>
+  <span class="size">
+    size
+    <input type="range" id="size" min="13" max="19" value="15" step="1">
+    <span id="sizeVal">15px</span>
+  </span>
+</header>
+
+<div class="layout">
+  <aside class="gallery" id="gallery"></aside>
+
+  <main class="preview">
+    <div class="pane">
+      <div class="pane-header">
+        <div class="pane-title">habit_ctl<small id="activeName">—</small></div>
+        <nav class="pane-nav">
+          <span class="on">List</span><span>Heatmap</span><span>Routines</span><span>Stats</span><span>Settings</span>
+        </nav>
+      </div>
+      <div class="pane-body">
+        <div class="habit">
+          <span class="ico">🏃</span>
+          <div class="info">
+            <div class="hname">Morning run <span class="chip">COUNT</span></div>
+            <div class="meta"><span class="hi">🔥 12</span> · 3/5 km · Jog before work</div>
+          </div>
+          <button class="btn">Done</button>
+        </div>
+        <div class="habit">
+          <span class="ico">📖</span>
+          <div class="info">
+            <div class="hname">Read 20 pages</div>
+            <div class="meta"><span class="hi">🔥 48</span> · 12,480 words this week</div>
+          </div>
+          <button class="btn">Done</button>
+        </div>
+        <div class="stats">
+          <div class="stat"><b>87%</b><span>Rate</span></div>
+          <div class="stat"><b>1,204</b><span>Check-ins</span></div>
+          <div class="stat"><b>Lv 14</b><span>XP</span></div>
+        </div>
+        <p class="para">A habit tracker that looks like your terminal. Numbers read cleanly in <span class="mono">monospace</span> — <span class="mono">2026-10-16</span>, <span class="mono">92%</span>, <span class="mono">🔥 48 days</span> — while headings and labels stay friendly.</p>
+        <div class="copy">CSS vars to apply: <code>--font-sans</code> + <code>--font-mono</code> on <code>:root</code></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const GROUPS = [
+    {
+      title: 'Developer pairs · sans + mono',
+      items: [
+        { name: 'Space Grotesk + IBM Plex Mono', sans: "'Space Grotesk', sans-serif", mono: "'IBM Plex Mono', monospace", tags: 'geometric sans · humanist mono' },
+        { name: 'Inter + JetBrains Mono', sans: "'Inter', sans-serif", mono: "'JetBrains Mono', monospace", tags: 'neutral sans · dev mono' },
+        { name: 'IBM Plex Sans + IBM Plex Mono', sans: "'IBM Plex Sans', sans-serif", mono: "'IBM Plex Mono', monospace", tags: 'superfamily · cohesive' },
+        { name: 'Geist + Geist Mono', sans: "'Geist', sans-serif", mono: "'Geist Mono', monospace", tags: 'modern SaaS · crisp' },
+        { name: 'Outfit + JetBrains Mono', sans: "'Outfit', sans-serif", mono: "'JetBrains Mono', monospace", tags: 'rounded geometric · dev mono' },
+        { name: 'Sora + IBM Plex Mono', sans: "'Sora', sans-serif", mono: "'IBM Plex Mono', monospace", tags: 'techy sans · clean mono' },
+        { name: 'Manrope + Space Mono', sans: "'Manrope', sans-serif", mono: "'Space Mono', monospace", tags: 'soft sans · quirky mono' },
+        { name: 'Red Hat Display + Red Hat Mono', sans: "'Red Hat Display', sans-serif", mono: "'Red Hat Mono', monospace", tags: 'superfamily · warm' },
+        { name: 'DM Sans + DM Mono', sans: "'DM Sans', sans-serif", mono: "'DM Mono', monospace", tags: 'friendly geometric · soft mono' },
+        { name: 'Plus Jakarta Sans + Spline Sans Mono', sans: "'Plus Jakarta Sans', sans-serif", mono: "'Spline Sans Mono', monospace", tags: 'modern · rounded mono' },
+        { name: 'Bricolage Grotesque + Martian Mono', sans: "'Bricolage Grotesque', sans-serif", mono: "'Martian Mono', monospace", tags: 'editorial · terminal mono' },
+        { name: 'Titillium Web + Inconsolata', sans: "'Titillium Web', sans-serif", mono: "'Inconsolata', monospace", tags: 'technical · classic mono' },
+      ],
+    },
+    {
+      title: 'Techy / sci-fi flavor',
+      items: [
+        { name: 'Chakra Petch + Martian Mono', sans: "'Chakra Petch', sans-serif", mono: "'Martian Mono', monospace", tags: 'angular tech · terminal mono' },
+        { name: 'Rajdhani + Sometype Mono', sans: "'Rajdhani', sans-serif", mono: "'Sometype Mono', monospace", tags: 'condensed tech · typewriter mono' },
+        { name: 'Exo 2 + Azeret Mono', sans: "'Exo 2', sans-serif", mono: "'Azeret Mono', monospace", tags: 'sci-fi sans · geometric mono' },
+        { name: 'Sora + Azeret Mono', sans: "'Sora', sans-serif", mono: "'Azeret Mono', monospace", tags: 'techy sans · techno mono' },
+        { name: 'Chakra Petch + Azeret Mono', sans: "'Chakra Petch', sans-serif", mono: "'Azeret Mono', monospace", tags: 'angular · hard-edged mono' },
+      ],
+    },
+    {
+      title: 'All-mono (pure terminal)',
+      items: [
+        { name: 'JetBrains Mono only', sans: "'JetBrains Mono', monospace", mono: "'JetBrains Mono', monospace", tags: 'all-mono · current' },
+        { name: 'IBM Plex Mono only', sans: "'IBM Plex Mono', monospace", mono: "'IBM Plex Mono', monospace", tags: 'all-mono · humanist' },
+        { name: 'Martian Mono only', sans: "'Martian Mono', monospace", mono: "'Martian Mono', monospace", tags: 'all-mono · pixelated terminal' },
+        { name: 'Sometype Mono only', sans: "'Sometype Mono', monospace", mono: "'Sometype Mono', monospace", tags: 'all-mono · typewriter' },
+        { name: 'Azeret Mono only', sans: "'Azeret Mono', monospace", mono: "'Azeret Mono', monospace", tags: 'all-mono · techno' },
+        { name: 'Geist Mono only', sans: "'Geist Mono', monospace", mono: "'Geist Mono', monospace", tags: 'all-mono · crisp geometric' },
+        { name: 'Red Hat Mono only', sans: "'Red Hat Mono', monospace", mono: "'Red Hat Mono', monospace", tags: 'all-mono · warm' },
+        { name: 'Source Code Pro only', sans: "'Source Code Pro', monospace", mono: "'Source Code Pro', monospace", tags: 'all-mono · Adobe classic' },
+        { name: 'Reddit Mono only', sans: "'Reddit Mono', monospace", mono: "'Reddit Mono', monospace", tags: 'all-mono · modern' },
+        { name: 'Fragment Mono only', sans: "'Fragment Mono', monospace", mono: "'Fragment Mono', monospace", tags: 'all-mono · Helvetica-ish' },
+        { name: 'Inconsolata only', sans: "'Inconsolata', monospace", mono: "'Inconsolata', monospace", tags: 'all-mono · compact' },
+        { name: 'Fira Code only', sans: "'Fira Code', monospace", mono: "'Fira Code', monospace", tags: 'all-mono · ligatures' },
+        { name: 'Ubuntu Mono only', sans: "'Ubuntu Mono', monospace", mono: "'Ubuntu Mono', monospace", tags: 'all-mono · friendly' },
+        { name: 'Space Mono only', sans: "'Space Mono', monospace", mono: "'Space Mono', monospace", tags: 'all-mono · retro' },
+      ],
+    },
+  ];
+
+  const gallery = document.getElementById('gallery');
+  const root = document.documentElement;
+  const flat = [];
+
+  GROUPS.forEach((g) => {
+    const h = document.createElement('h2');
+    h.textContent = g.title;
+    gallery.appendChild(h);
+    g.items.forEach((c) => {
+      const el = document.createElement('div');
+      el.className = 'combo';
+      el.innerHTML = `
+        <div class="name" style="font-family:${c.sans}">${c.name}</div>
+        <div class="tags">${c.tags}</div>
+        <div class="sample" style="font-family:${c.mono}">🔥 12 · 3/5 km · <span class="num">87%</span> · 2026-10-16</div>
+      `;
+      const idx = flat.length;
+      el.addEventListener('click', () => select(idx));
+      gallery.appendChild(el);
+      flat.push({ data: c, el });
+    });
+  });
+
+  function select(i) {
+    const c = flat[i].data;
+    root.style.setProperty('--sans', c.sans);
+    root.style.setProperty('--mono', c.mono);
+    document.getElementById('activeName').textContent = ' — ' + c.name;
+    flat.forEach((f, j) => f.el.classList.toggle('active', j === i));
+  }
+
+  const size = document.getElementById('size');
+  const sizeVal = document.getElementById('sizeVal');
+  size.addEventListener('input', () => {
+    root.style.setProperty('--size', size.value + 'px');
+    sizeVal.textContent = size.value + 'px';
+  });
+
+  select(0);
+</script>
+</body>
+</html>
