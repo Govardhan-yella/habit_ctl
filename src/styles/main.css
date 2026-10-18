@@ -249,6 +249,154 @@ pre {
   box-shadow: inset 0 0 0 1px var(--accent);
 }
 
+/* ---- Widget size variants: small / medium / large --------- */
+.widget-sm {
+  padding: 8px 10px;
+  gap: 6px;
+  border-radius: var(--radius-sm);
+}
+.widget-sm .widget-title {
+  font-size: 9px;
+  gap: 4px;
+}
+.widget-sm .widget-sub {
+  font-size: 9px;
+}
+.widget-sm .widget-stat,
+.widget-sm .widget-empty {
+  font-size: 10px;
+}
+.widget-sm .btn-sm {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.widget-lg {
+  padding: 16px;
+  gap: 12px;
+}
+.widget-lg .widget-title {
+  font-size: 12px;
+}
+.widget-lg .widget-stat {
+  font-size: 12px;
+}
+
+/* progress widget sizes */
+#w-progress.widget-sm .ring-wrap {
+  width: 78px;
+  height: 78px;
+}
+#w-progress.widget-lg .ring-wrap {
+  width: 148px;
+  height: 148px;
+}
+#w-progress.widget-lg .ring-pct {
+  font-size: 22px;
+}
+#w-progress.widget-lg .ring-sub {
+  font-size: 12px;
+}
+.prog-trend {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 40px;
+  margin-top: 2px;
+}
+.prog-trend .pt-bar {
+  flex: 1;
+  min-height: 6px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+  opacity: 0.7;
+}
+.prog-trend .pt-bar:last-of-type {
+  opacity: 1;
+}
+.prog-trend .pt-label,
+.water-week .pt-label {
+  align-self: flex-end;
+  font-size: 9px;
+  color: var(--fg-muted);
+  margin-left: 2px;
+}
+
+/* heatmap widget sizes */
+#w-heatmap.widget-sm .gh-cell {
+  width: 9px;
+  height: 9px;
+}
+#w-heatmap.widget-lg .gh-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+/* streak density */
+.streak-board.sb-sm .sb-row {
+  font-size: 10px;
+  padding: 3px 0;
+}
+.streak-board.sb-lg .sb-row {
+  font-size: 12px;
+  padding: 7px 0;
+}
+
+/* timer totals bar */
+.focus-history {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+.focus-history .fh-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.focus-history .fh-bar > div {
+  height: 100%;
+  background: var(--info);
+}
+.focus-history .fh-val {
+  color: var(--fg);
+}
+
+/* water 7-day history */
+.water-week {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 30px;
+  margin-top: 2px;
+}
+.water-week .ww-cell {
+  flex: 1;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--surface-3);
+}
+.water-week .ww-cell.part {
+  background: var(--info);
+  opacity: 0.5;
+}
+.water-week .ww-cell.full {
+  background: var(--info);
+}
+
+/* mood button sizes */
+.mood-buttons.mood-sm .mood-btn {
+  font-size: 0.9rem;
+}
+.mood-buttons.mood-lg .mood-btn {
+  font-size: 1.4rem;
+  padding: 0.4rem 0;
+}
+
 .widget-title {
   display: flex;
   align-items: center;

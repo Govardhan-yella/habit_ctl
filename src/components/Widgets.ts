@@ -133,6 +133,29 @@ export class WidgetRail {
     try { localStorage.setItem(WIDGETS_KEY, JSON.stringify(this.cfg)); } catch { /* ignore */ }
   }
 
+  /** Current size variant ('sm' | 'md' | 'lg') for a widget id. */
+  private sizeOf(id: string): WidgetSize {
+    return this.cfg.find(c => c.id === id)?.size || 'md';
+  }
+
+  /** Completion ratio for each of the last 7 days. */
+  private weeklyTrend(): number[] {
+    const s = store.getState();
+    const out: number[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = getDateString(addDays(new Date(), -i));
+      const sched = s.habits.filter(h => !h.archivedAt && store.isHabitScheduledOn(h, d));
+      let done = 0;
+      for (const h of sched) {
+        const c = s.completions.find(x => x.habitId === h.id && x.date === d);
+        const isDone = h.mode === 'checkbox' ? !!c : !!(c && c.value >= h.target);
+        if (isDone) done++;
+      }
+      out.push(sched.length ? done / sched.length : 0);
+    }
+    return out;
+  }
+
   private openCustomizer(): void {
     const content = document.createElement('div');
     content.className = 'widget-customizer';
@@ -329,7 +352,8 @@ export class WidgetRail {
     const circ = 2 * Math.PI * 34;
     const offset = circ * (1 - pct);
 
-    const cells = 14;
+    const size = this.sizeOf('progress');
+    const cells = size === 'lg' ? 18 : 14;
     const filled = Math.min(cells, Math.round(pct * cells));
     const showCursor = pct < 1;
     const emptyCount = Math.max(0, cells - filled - (showCursor ? 1 : 0));
@@ -340,8 +364,12 @@ export class WidgetRail {
     const nxt = lvl ** 2 * 100;
     const xpPct = Math.min(100, ((txp - cur) / (nxt - cur)) * 100);
 
+    const trendHtml = size === 'lg'
+      ? `<div class="prog-trend" title="Last 7 days">${this.weeklyTrend().map(p => `<span class="pt-bar" style="height:${Math.max(8, Math.round(p * 100))}%"></span>`).join('')}<span class="pt-label">7d</span></div>`
+      : '';
+
     el.innerHTML = `
-      <span class="widget-title">Today</span>
+      <span class="widget-title">Today${size === 'lg' ? ' <span class="widget-sub">weekly view</span>' : ''}</span>
       <div class="ring-wrap">
         <svg viewBox="0 0 80 80" class="ring" role="img" aria-label="${doneCount} of ${total} done">
           <circle class="ring-bg" cx="40" cy="40" r="34"></circle>
@@ -349,6 +377,7 @@ export class WidgetRail {
         </svg>
         <div class="ring-center"><span class="ring-pct">${Math.round(pct * 100)}%</span><span class="ring-sub">${doneCount}/${total}</span></div>
       </div>
+      ${size === 'sm' ? '' : `
       <div class="cmd-progress">
         <div class="cmd-prompt"><span class="terminal-prompt">$</span> progress --today</div>
         <div class="cmd-bar" aria-label="${Math.round(pct * 100)} percent of today's habits complete">
@@ -359,36 +388,39 @@ export class WidgetRail {
       <div class="xp-mini">
         <div class="xp-mini-head"><span>Lv ${lvl}</span><span>${txp} XP</span></div>
         <div class="xp-mini-bar"><div style="width:${xpPct}%"></div></div>
-      </div>`;
+      </div>`}
+      ${trendHtml}`;
   }
 
   /* ── Streak board ────────────────────────────────────────── */
   private renderStreaks(): void {
     const el = this.root.querySelector('#w-streaks') as HTMLElement | null;
     if (!el) return;
+    const size = this.sizeOf('streaks');
+    const limit = size === 'sm' ? 3 : size === 'lg' ? 9 : 5;
     const s = store.getState();
     const today = getTodayString();
     const vacation = store.getSettings().vacationMode;
-    const items = s.habits
-      .filter(h => !h.archivedAt)
-      .map(h => ({ h, st: store.getHabitStreak(h.id), doneToday: s.completions.some(c => c.habitId === h.id && c.date === today) }))
-      .sort((a, b) => b.st.current - a.st.current)
-      .slice(0, 5);
+    const all = s.habits.filter(h => !h.archivedAt)
+      .map(h => ({ h, st: store.getHabitStreak(h.id), doneToday: s.completions.filter(x => x.habitId === h.id && x.date === today).length > 0 }))
+      .sort((a, b) => b.st.current - a.st.current);
+    const items = all.slice(0, limit);
 
     if (!items.length) {
       el.innerHTML = `<span class="widget-title">Streaks</span><div class="widget-empty">No habits yet</div>`;
       return;
     }
+    const total = all.reduce((n, x) => n + x.st.current, 0);
     el.innerHTML = `
-      <span class="widget-title">Streaks</span>
-      <div class="streak-board">
+      <span class="widget-title">Streaks${size === 'lg' ? ` <span class="widget-sub">${all.length} tracked · ${total}d total</span>` : ''}</span>
+      <div class="streak-board sb-${size}">
         ${items.map(({ h, st, doneToday }) => `
           <div class="sb-row">
             <span class="sb-name"><span class="sb-dot" style="background:${h.color}"></span>${h.icon} ${h.name}</span>
             <span class="sb-vals">
               ${st.current > 0 && !doneToday && !vacation && !store.isSkipped(h.id, today) ? '<span class="sb-risk" title="At risk — not done today">at risk</span>' : ''}
               <span class="sb-cur">🔥${st.current}</span>
-              <span class="sb-best">★${st.longest}</span>
+              ${size === 'sm' ? '' : `<span class="sb-best">★${st.longest}</span>`}
             </span>
           </div>`).join('')}
       </div>`;
@@ -404,9 +436,11 @@ export class WidgetRail {
       return;
     }
     const today = getTodayString();
+    const size = this.sizeOf('heatmap');
+    const days = size === 'sm' ? 14 : DAYS_BACK;
     const cells: { date: string; n: number }[] = [];
     let max = 1;
-    for (let i = DAYS_BACK - 1; i >= 0; i--) {
+    for (let i = days - 1; i >= 0; i--) {
       const d = getDateString(addDays(new Date(), -i));
       const n = s.completions.filter(c => c.date === d).length;
       if (n > max) max = n;
@@ -437,20 +471,25 @@ export class WidgetRail {
   private renderTimer(): void {
     const el = this.root.querySelector('#w-timer') as HTMLElement | null;
     if (!el) return;
+    const size = this.sizeOf('timer');
     const label = this.timer.mode === 'focus' ? 'FOCUS' : 'BREAK';
     const mm = pad(Math.floor(this.timer.remaining / 60));
     const ss = pad(this.timer.remaining % 60);
     const st = this.timerStatsToday();
+    const history = size === 'lg'
+      ? `<div class="focus-history"><span class="fh-label">Today</span><div class="fh-bar"><div style="width:${Math.min(100, (st.focusMin / 120) * 100)}%"></div></div><span class="fh-val">${st.focusMin}m</span></div>`
+      : '';
     el.innerHTML = `
-      <span class="widget-title">Focus timer</span>
+      <span class="widget-title">Focus timer${size === 'lg' ? ` <span class="widget-sub">${st.focusSessions} sessions</span>` : ''}</span>
       <div class="focus-mode ${this.timer.running ? 'running' : ''}">${label} · ${mm}:${ss}</div>
-      <div class="widget-stat">Today: ${st.focusMin}m focus · ${st.focusSessions} session${st.focusSessions === 1 ? '' : 's'} · ${st.breakSessions} break${st.breakSessions === 1 ? '' : 's'}</div>
-      <div class="preset-row preset-labelled"><span class="preset-label">Focus</span>${[15, 25, 45].map(m => `<button class="btn btn-sm ${this.timer.focusMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-focus-preset" data-min="${m}">${m}m</button>`).join('')}</div>
-      <div class="preset-row preset-labelled"><span class="preset-label">Break</span>${[5, 10, 15].map(m => `<button class="btn btn-sm ${this.timer.breakMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-break-preset" data-min="${m}">${m}m</button>`).join('')}</div>
+      ${size === 'sm' ? '' : `<div class="widget-stat">Today: ${st.focusMin}m focus · ${st.focusSessions} session${st.focusSessions === 1 ? '' : 's'} · ${st.breakSessions} break${st.breakSessions === 1 ? '' : 's'}</div>`}
+      ${history}
+      ${size === 'sm' ? '' : `<div class="preset-row preset-labelled"><span class="preset-label">Focus</span>${[15, 25, 45].map(m => `<button class="btn btn-sm ${this.timer.focusMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-focus-preset" data-min="${m}">${m}m</button>`).join('')}</div>`}
+      ${size === 'sm' ? '' : `<div class="preset-row preset-labelled"><span class="preset-label">Break</span>${[5, 10, 15].map(m => `<button class="btn btn-sm ${this.timer.breakMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-break-preset" data-min="${m}">${m}m</button>`).join('')}</div>`}
       <div class="focus-actions">
         <button class="btn btn-sm btn-primary" data-act="timer-toggle">${this.timer.running ? 'Pause' : 'Start'}</button>
         <button class="btn btn-sm btn-ghost" data-act="timer-reset">Reset</button>
-        <button class="btn btn-sm btn-ghost" data-act="timer-switch">${this.timer.mode === 'focus' ? '→ Break' : '→ Focus'}</button>
+        ${size === 'sm' ? '' : `<button class="btn btn-sm btn-ghost" data-act="timer-switch">${this.timer.mode === 'focus' ? '→ Break' : '→ Focus'}</button>`}
       </div>`;
   }
 
@@ -532,29 +571,40 @@ export class WidgetRail {
     try { localStorage.setItem('hc-breaks', JSON.stringify(this.breakLog)); } catch { /* ignore */ }
   }
 
-  /* ── Mood tracker ────────────────────────────────────────── */
   private renderMood(): void {
     const el = this.root.querySelector('#w-mood') as HTMLElement | null;
     if (!el) return;
+    const size = this.sizeOf('mood');
     const todayMood = store.getTodayMood();
-    const recent = store.getRecentMoods(7);
+    const recent = store.getRecentMoods(size === 'lg' ? 21 : 7);
     const dots = recent.map(r => {
       const m = MOODS.find(x => x.key === r.mood);
       return `<span class="mood-dot${m ? ' active' : ''}" title="${r.date}${m ? ': ' + m.label : ''}">${m ? m.emoji : '·'}</span>`;
     }).join('');
+    const avg = store.getRecentMoods(7).filter(r => r.mood).length;
     el.innerHTML = `
-      <span class="widget-title">Mood</span>
-      <div class="mood-buttons">${MOODS.map(m => `<button class="mood-btn${todayMood === m.key ? ' active' : ''}" data-act="mood" data-mood="${m.key}" title="${m.label}">${m.emoji}</button>`).join('')}</div>
-      <div class="mood-dots">${dots}</div>`;
+      <span class="widget-title">Mood${size === 'lg' ? ` <span class="widget-sub">last ${recent.length} days</span>` : ''}</span>
+      <div class="mood-buttons mood-${size}">${MOODS.map(m => `<button class="mood-btn${todayMood === m.key ? ' active' : ''}" data-act="mood" data-mood="${m.key}" title="${m.label}">${m.emoji}</button>`).join('')}</div>
+      ${size === 'sm' ? '' : `<div class="mood-dots">${dots}</div>`}
+      ${size === 'lg' ? `<div class="widget-stat">${avg} logged this week</div>` : ''}`;
   }
 
   /* ── Water intake ────────────────────────────────────────── */
   private renderWater(): void {
     const el = this.root.querySelector('#w-water') as HTMLElement | null;
     if (!el) return;
+    const size = this.sizeOf('water');
     const goal = store.waterGoal();
     const count = store.getTodayWater();
     const pct = Math.min(100, (count / goal) * 100);
+    const waters = store.getState().waters;
+    const history = size === 'lg'
+      ? `<div class="water-week">${Array.from({ length: 7 }, (_, i) => {
+          const d = getDateString(addDays(new Date(), -(6 - i)));
+          const g = waters.find(x => x.date === d)?.glasses || 0;
+          return `<span class="ww-cell${g >= goal ? ' full' : g ? ' part' : ''}" title="${d}: ${g}/${goal}" style="opacity:${d === getTodayString() ? 1 : 0.75}"></span>`;
+        }).join('')}<span class="pt-label">7d</span></div>`
+      : '';
     el.innerHTML = `
       <span class="widget-title">Water <span class="widget-sub">${count}/${goal}</span></span>
       <div class="water-bar"><div style="width:${pct}%"></div></div>
@@ -562,13 +612,15 @@ export class WidgetRail {
         <button class="btn btn-sm btn-ghost" data-act="water-dec">−</button>
         <span class="water-cups">${'💧'.repeat(Math.min(count, goal))}${count > goal ? ' +' + (count - goal) : ''}</span>
         <button class="btn btn-sm btn-primary" data-act="water-inc">+</button>
-      </div>`;
+      </div>${history}`;
   }
 
   /* ── Batch: complete / skip many ─────────────────────────── */
   private renderBatch(): void {
     const el = this.root.querySelector('#w-batch') as HTMLElement | null;
     if (!el) return;
+    const size = this.sizeOf('batch');
+    const limit = size === 'sm' ? 3 : size === 'lg' ? 50 : 6;
     const s = store.getState();
     const today = getTodayString();
     const due = s.habits.filter(h => {
@@ -576,7 +628,7 @@ export class WidgetRail {
       const c = s.completions.find(x => x.habitId === h.id && x.date === today);
       const done = h.mode === 'checkbox' ? !!c : !!(c && c.value >= h.target);
       return !done;
-    }).slice(0, 6);
+    }).slice(0, limit);
     if (!due.length) {
       el.innerHTML = `<span class="widget-title">Batch</span><div class="widget-empty">All caught up 🎉</div>`;
       return;
@@ -614,17 +666,19 @@ export class WidgetRail {
   private renderCapture(): void {
     const el = this.root.querySelector('#w-capture') as HTMLElement | null;
     if (!el) return;
+    const size = this.sizeOf('capture');
+    const noteLimit = size === 'sm' ? 1 : size === 'lg' ? 8 : 4;
     const s = store.getState();
     const habits = s.habits.filter(h => !h.archivedAt);
-    const notes = s.notes.slice(0, 4);
+    const notes = s.notes.slice(0, noteLimit);
     el.innerHTML = `
-      <span class="widget-title">Quick capture</span>
+      <span class="widget-title">Quick capture${size === 'lg' ? ` <span class="widget-sub">${s.notes.length} total</span>` : ''}</span>
       <div class="capture-form">
         <input type="text" id="capture-input" placeholder="Note…" maxlength="140">
-        <select id="capture-select">
+        ${size === 'sm' ? '' : `<select id="capture-select">
           <option value="">Habit (optional)</option>
           ${habits.map(h => `<option value="${h.id}">${h.icon} ${h.name}</option>`).join('')}
-        </select>
+        </select>`}
         <button class="btn btn-sm btn-primary" data-act="note-add">Add</button>
       </div>
       <div class="note-list">
@@ -636,18 +690,24 @@ export class WidgetRail {
   private renderNeofetch(): void {
     const el = this.root.querySelector('#w-neofetch') as HTMLElement | null;
     if (!el) return;
+    const size = this.sizeOf('neofetch');
     const s = store.getState();
     const habits = s.habits.filter(h => !h.archivedAt).length;
     const best = s.habits.reduce((m, h) => Math.max(m, store.getHabitStreak(h.id).current), 0);
+    const p = store.todayProgress();
+    const rows = [
+      ['habits', habits],
+      ['routines', s.routines.length],
+      ['checks', s.completions.length],
+      ['best🔥', best],
+      ['shields', s.shields.filter(x => !x.usedAt).length],
+      ['moods', s.moods.length],
+      ['notes', s.notes.length],
+    ];
+    const shown = size === 'sm' ? rows.slice(0, 4) : rows;
     el.innerHTML = `
-      <span class="widget-title">System</span>
-      <pre class="neofetch">habits   ${habits}
-routines ${s.routines.length}
-checks   ${s.completions.length}
-best🔥   ${best}
-shields  ${s.shields.filter(x => !x.usedAt).length}
-moods    ${s.moods.length}
-notes    ${s.notes.length}</pre>`;
+      <span class="widget-title">System${size === 'lg' ? ' <span class="widget-sub">full panel</span>' : ''}</span>
+      <pre class="neofetch">${size === 'lg' ? 'today    ' + Math.round(store.todayProgress().pct * 100) + '%\n' : ''}${shown.map(([k, v]) => `${(k as string).padEnd(8)} ${v}`).join('\n')}</pre>`;
   }
 
   private flash(id: string, msg: string): void {
