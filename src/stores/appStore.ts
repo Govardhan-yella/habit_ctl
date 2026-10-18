@@ -118,8 +118,8 @@ class AppStore {
     set('--error', c.error);
     set('--ring', rgba(c.accent, 0.45));
     set('--surface', c.bgSecondary);
-    set('--surface-2', mix(c.bgSecondary, fg, 0.06));
-    set('--surface-3', mix(c.bgSecondary, fg, 0.12));
+    set('--surface-2', mix(c.bgSecondary, fg, 0.04));
+    set('--surface-3', mix(c.bgSecondary, fg, 0.08));
     set('--hair', rgba(fg, 0.06));
     set('--hair-strong', rgba(fg, 0.10));
 
