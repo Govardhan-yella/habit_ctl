@@ -234,6 +234,21 @@ class AppStore {
 
   getTodayWater(): number { return this.state.waters.find(x => x.date === getTodayString())?.glasses || 0; }
   waterGoal(): number { return 8; }
+
+  /** Completion of today's scheduled habits — { done, total, pct (0..1) }. */
+  todayProgress(): { done: number; total: number; pct: number } {
+    const today = getTodayString();
+    const scheduled = this.state.habits.filter(h => !h.archivedAt && this.isHabitScheduledToday(h));
+    let done = 0;
+    for (const h of scheduled) {
+      const c = this.state.completions.find(x => x.habitId === h.id && x.date === today);
+      const isDone = h.mode === 'checkbox' ? !!c : !!(c && c.value >= h.target);
+      if (isDone) done++;
+    }
+    const total = scheduled.length;
+    return { done, total, pct: total ? done / total : 0 };
+  }
+
   setWater(glasses: number): void { const g = Math.max(0, Math.min(30, glasses)); const date = getTodayString(); const existing = this.state.waters.find(x => x.date === date); const nw: WaterLog = existing ? { ...existing, glasses: g } : { id: crypto.randomUUID(), date, glasses: g, createdAt: new Date().toISOString() }; this.setState({ waters: existing ? this.state.waters.map(x => x.id === nw.id ? nw : x) : [...this.state.waters, nw] }); this.persistSide(); }
   adjustWater(delta: number): void { this.setWater(this.getTodayWater() + delta); }
 

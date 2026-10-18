@@ -37,6 +37,7 @@ export class App {
   private render() {
     this.root.innerHTML = `
       <div class="app">
+        <div class="top-progress" aria-hidden="true"><div class="top-progress-fill" id="top-progress-fill"></div></div>
         <div class="vacation-banner" id="vacation-banner" hidden>🌴 Vacation mode active — streaks paused</div>
         <header class="app-header">
           <div class="header-left">
@@ -67,6 +68,7 @@ export class App {
         </div>
         <footer class="app-footer">
           <div class="footer-left"><span class="terminal-prompt">$</span><span id="footer-hint">j/k navigate • Space toggle • a add • h heatmap • r routines • s stats • , settings</span></div>
+          <div class="footer-progress" id="footer-progress" aria-live="polite"></div>
           <div class="footer-right" id="sync-status"></div>
         </footer>
       </div>
@@ -150,8 +152,28 @@ export class App {
     if (banner) banner.hidden = !s.vacationMode;
     this.applyCustomCss(s.customCSS || '');
     this.updateDateDisplay();
+    this.updateProgress();
     this.updateSyncStatus();
     this.maybeLock();
+  }
+
+  /** Top-edge reading bar + footer ASCII bar, both driven by today's completion. */
+  private updateProgress(): void {
+    const { done, total, pct } = store.todayProgress();
+    const top = this.root.querySelector('#top-progress-fill') as HTMLElement | null;
+    if (top) {
+      top.style.width = `${(pct * 100).toFixed(1)}%`;
+      top.parentElement?.classList.toggle('is-complete', pct >= 1 && total > 0);
+    }
+    const fp = this.root.querySelector('#footer-progress') as HTMLElement | null;
+    if (fp) {
+      const cells = 10;
+      const filled = Math.round(pct * cells);
+      const bar = '▓'.repeat(filled) + '░'.repeat(cells - filled);
+      const label = total ? `${done}/${total}` : 'no habits';
+      fp.innerHTML = `<span class="fp-label">today</span><span class="fp-bar">[${bar}]</span><span class="fp-pct">${Math.round(pct * 100)}% <span class="fp-count">${label}</span></span>`;
+      fp.classList.toggle('is-complete', pct >= 1 && total > 0);
+    }
   }
 
   private applyCustomCss(css: string): void {

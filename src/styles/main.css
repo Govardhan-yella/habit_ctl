@@ -571,6 +571,94 @@ pre {
   color: var(--warning);
 }
 
+/* ---- Daily progress: top edge + footer + command bar ------- */
+.top-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--hair-strong);
+  z-index: 60;
+  pointer-events: none;
+}
+.top-progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  transition: width 0.5s var(--ease), background 0.3s var(--ease),
+    box-shadow 0.3s var(--ease);
+}
+.top-progress.is-complete .top-progress-fill {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+
+.footer-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+.footer-progress .fp-bar {
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+.footer-progress .fp-pct {
+  color: var(--fg);
+}
+.footer-progress.is-complete .fp-bar,
+.footer-progress.is-complete .fp-pct {
+  color: var(--success);
+}
+
+/* Command-line progress bar inside the Today widget */
+.cmd-progress {
+  margin: 6px 0 2px;
+  font-size: 11px;
+}
+.cmd-prompt {
+  color: var(--fg-muted);
+}
+.cmd-prompt .terminal-prompt {
+  color: var(--accent);
+}
+.cmd-bar {
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+.cmd-bar .cb-fill {
+  color: var(--accent);
+}
+.cmd-bar .cb-empty {
+  color: var(--fg-muted);
+  opacity: 0.35;
+}
+.cmd-bar .cb-cursor {
+  color: var(--accent);
+  animation: blink 1s steps(2, start) infinite;
+}
+.cmd-bar .cb-pct {
+  color: var(--fg);
+  margin-left: 8px;
+  letter-spacing: 0;
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .footer-progress {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: center;
+  }
+}
+
 /* ---- Buttons --------------------------------------------- */
 .btn {
   font-family: var(--font-mono);

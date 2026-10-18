@@ -329,6 +329,11 @@ export class WidgetRail {
     const circ = 2 * Math.PI * 34;
     const offset = circ * (1 - pct);
 
+    const cells = 14;
+    const filled = Math.min(cells, Math.round(pct * cells));
+    const showCursor = pct < 1;
+    const emptyCount = Math.max(0, cells - filled - (showCursor ? 1 : 0));
+
     const txp = s.completions.length * 10;
     const lvl = Math.floor(Math.sqrt(txp / 100)) + 1;
     const cur = (lvl - 1) ** 2 * 100;
@@ -343,6 +348,13 @@ export class WidgetRail {
           <circle class="ring-fg" cx="40" cy="40" r="34" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"></circle>
         </svg>
         <div class="ring-center"><span class="ring-pct">${Math.round(pct * 100)}%</span><span class="ring-sub">${doneCount}/${total}</span></div>
+      </div>
+      <div class="cmd-progress">
+        <div class="cmd-prompt"><span class="terminal-prompt">$</span> progress --today</div>
+        <div class="cmd-bar" aria-label="${Math.round(pct * 100)} percent of today's habits complete">
+          <span class="cb-open">[</span><span class="cb-fill">${'█'.repeat(filled)}</span>${showCursor ? '<span class="cb-cursor">█</span>' : ''}<span class="cb-empty">${'░'.repeat(emptyCount)}</span><span class="cb-close">]</span>
+          <span class="cb-pct">${Math.round(pct * 100)}%</span>
+        </div>
       </div>
       <div class="xp-mini">
         <div class="xp-mini-head"><span>Lv ${lvl}</span><span>${txp} XP</span></div>
