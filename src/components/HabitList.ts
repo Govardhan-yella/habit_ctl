@@ -1,6 +1,6 @@
 import { store } from '../stores/appStore';
 import { Habit, Completion, HabitMode } from '../types';
-import { getTodayString } from '../utils/date';
+import { getTodayString, formatDateString } from '../utils/date';
 import { createProgressBar, createEmptyState, createToast } from './TerminalUI';
 import { openHabitForm } from './HabitForm';
 
@@ -115,7 +115,10 @@ export class HabitListComponent {
     const offDayNote = !scheduled && !archived ? '<span class="habit-offday">off-day</span>' : '';
     const routineBadge = routine ? `<span class="habit-routine-badge" style="color:${routine.color};border-color:${routine.color}">${routine.icon} ${routine.name}</span>` : '';
     const showProgress = h.mode !== 'checkbox' && h.mode !== 'timer' && h.mode !== 'health';
-    el.innerHTML = `<div class="habit-main"><div class="habit-indicator"><span class="habit-mode-icon" style="color:${h.color}">${icons[h.mode]}</span>${shields > 0 ? `<span class="habit-shield-badge">${shields}🛡</span>` : ''}</div><div class="habit-info"><div class="habit-header"><span class="habit-name">${h.name}</span><span class="habit-mode-badge">${labels[h.mode]}</span>${routineBadge}${offDayNote}</div><div class="habit-meta"><span class="habit-streak">🔥 ${streak.current}${streak.isActive ? '' : ' (idle)'}</span><span class="habit-target">${this.getTarget(h, c)}</span></div>${showProgress ? `<div class="habit-progress">${createProgressBar(progress, 100, h.color).outerHTML}</div>` : ''}</div><div class="habit-actions">${this.getActions(h, done, c, date, canLog, archived)}</div></div>${isSelected ? this.getDetail(h, cs, streak, shields) : ''}`;
+    const logo = h.icon?.startsWith('data:')
+      ? `<img class="habit-logo-img" src="${h.icon}" alt="">`
+      : (h.icon || icons[h.mode]);
+    el.innerHTML = `<div class="habit-main"><div class="habit-indicator"><span class="habit-mode-icon" style="color:${h.color}">${logo}</span>${shields > 0 ? `<span class="habit-shield-badge">${shields}🛡</span>` : ''}</div><div class="habit-info"><div class="habit-header"><span class="habit-name">${h.name}</span><span class="habit-mode-badge">${labels[h.mode]}</span>${routineBadge}${offDayNote}</div><div class="habit-meta"><span class="habit-streak">🔥 ${streak.current}${streak.isActive ? '' : ' (idle)'}</span><span class="habit-target">${this.getTarget(h, c)}</span></div>${showProgress ? `<div class="habit-progress">${createProgressBar(progress, 100, h.color).outerHTML}</div>` : ''}</div><div class="habit-actions">${this.getActions(h, done, c, date, canLog, archived)}</div></div>${isSelected ? this.getDetail(h, cs, streak, shields) : ''}`;
 
     el.querySelector('.habit-main')?.addEventListener('click', e => { if (!(e.target as HTMLElement).closest('.habit-actions')) { this.selectedId = isSelected ? null : h.id; this.render(); } });
     this.wireActions(el, h, done, date, canLog, archived);
@@ -186,7 +189,8 @@ export class HabitListComponent {
 
   private getDetail(h: Habit, cs: Completion[], streak: any, shields: number): string {
     const recent = [...cs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 7);
-    return `<div class="habit-detail"><div class="habit-detail-section"><h4>Streak</h4><div class="streak-info"><span>Current: ${streak.current}d</span><span>Longest: ${streak.longest}d</span><span>Total: ${streak.total}</span><span>Shields: ${shields}</span></div></div><div class="habit-detail-section"><h4>Recent</h4><div class="completion-history">${recent.length ? recent.map(x => `<div class="completion-entry"><span>${x.date}</span><span>${h.mode === 'checkbox' ? '✓' : x.value + (h.unit ? ' ' + h.unit : '')}</span></div>`).join('') : '<span class="no-completions">None</span>'}</div></div><div class="habit-detail-actions"><button class="btn btn-ghost btn-sm btn-edit" data-id="${h.id}">Edit</button><button class="btn btn-ghost btn-sm btn-delete" data-id="${h.id}">Delete</button><button class="btn btn-ghost btn-sm btn-archive" data-id="${h.id}">Archive</button></div></div>`;
+    const df = store.getSettings().dateFormat;
+    return `<div class="habit-detail"><div class="habit-detail-section"><h4>Streak</h4><div class="streak-info"><span>Current: ${streak.current}d</span><span>Longest: ${streak.longest}d</span><span>Total: ${streak.total}</span><span>Shields: ${shields}</span></div></div><div class="habit-detail-section"><h4>Recent</h4><div class="completion-history">${recent.length ? recent.map(x => `<div class="completion-entry"><span>${formatDateString(x.date, df)}</span><span>${h.mode === 'checkbox' ? '✓' : x.value + (h.unit ? ' ' + h.unit : '')}</span></div>`).join('') : '<span class="no-completions">None</span>'}</div></div><div class="habit-detail-actions"><button class="btn btn-ghost btn-sm btn-edit" data-id="${h.id}">Edit</button><button class="btn btn-ghost btn-sm btn-delete" data-id="${h.id}">Delete</button><button class="btn btn-ghost btn-sm btn-archive" data-id="${h.id}">Archive</button></div></div>`;
   }
 
   private getTarget(h: Habit, c: Completion | undefined): string { const v = c?.value || 0; switch (h.mode) { case 'checkbox': return c ? '✓ Done' : 'Pending'; case 'counter': case 'number': case 'health': return `${v}/${h.target}${h.unit ? ' ' + h.unit : ''}`; case 'timer': return c ? `✓ ${c.value} min` : 'Not started'; } return ''; }

@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   formatDate,
+  formatDateString,
+  formatTime,
   parseDate,
   getDateString,
   addDays,
@@ -27,6 +29,36 @@ describe('formatDate', () => {
   });
   it('pads single-digit months and days', () => {
     expect(formatDate(new Date(2024, 0, 9))).toBe('2024-01-09');
+  });
+});
+
+describe('formatDateString', () => {
+  it('passes ISO through unchanged', () => {
+    expect(formatDateString('2024-03-05', 'YYYY-MM-DD')).toBe('2024-03-05');
+  });
+  it('reformats to DD/MM/YYYY', () => {
+    expect(formatDateString('2024-03-05', 'DD/MM/YYYY')).toBe('05/03/2024');
+  });
+  it('reformats to MM/DD/YYYY', () => {
+    expect(formatDateString('2024-03-05', 'MM/DD/YYYY')).toBe('03/05/2024');
+  });
+  it('returns empty string for empty input', () => {
+    expect(formatDateString('', 'DD/MM/YYYY')).toBe('');
+  });
+});
+
+describe('formatTime', () => {
+  it('passes 24h clock through', () => {
+    expect(formatTime('14:05', '24h')).toBe('14:05');
+  });
+  it('converts afternoon to 12h PM', () => {
+    expect(formatTime('14:05', '12h')).toBe('2:05 PM');
+  });
+  it('converts midnight to 12 AM', () => {
+    expect(formatTime('00:30', '12h')).toBe('12:30 AM');
+  });
+  it('converts noon to 12 PM', () => {
+    expect(formatTime('12:00', '12h')).toBe('12:00 PM');
   });
 });
 
@@ -150,5 +182,25 @@ describe('getStreakData', () => {
     const m = new Map<string, number>([['2024-01-01', 0]]);
     const r = getStreakData(m, daily, []);
     expect(r.total).toBe(0);
+  });
+
+  it('skips vacation days instead of breaking the streak', () => {
+    const m = new Map<string, number>();
+    // done 6 and 7 days ago, then a 4-day vacation covering the 1..5-days-ago gap
+    m.set(getDateString(subDays(today, 6)), 1);
+    m.set(getDateString(subDays(today, 7)), 1);
+    const vacation = { start: getDateString(subDays(today, 5)), end: getDateString(subDays(today, 1)) };
+    const r = getStreakData(m, daily, [], vacation);
+    // walking back from today, vacation days are skipped so the run reaches the two done days
+    expect(r.current).toBe(2);
+    expect(r.isActive).toBe(true);
+  });
+
+  it('without a vacation window the same gap breaks the streak', () => {
+    const m = new Map<string, number>();
+    m.set(getDateString(subDays(today, 6)), 1);
+    m.set(getDateString(subDays(today, 7)), 1);
+    const r = getStreakData(m, daily, []);
+    expect(r.current).toBe(0);
   });
 });

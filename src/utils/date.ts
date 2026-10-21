@@ -11,6 +11,12 @@ export function formatDate(date: Date, format: 'YYYY-MM-DD' | 'DD/MM/YYYY' | 'MM
   }
 }
 
+/** Format an ISO `YYYY-MM-DD` string using the user's chosen date format. */
+export function formatDateString(iso: string, format: 'YYYY-MM-DD' | 'DD/MM/YYYY' | 'MM/DD/YYYY' = 'YYYY-MM-DD'): string {
+  if (!iso || format === 'YYYY-MM-DD') return iso;
+  return formatDate(parseDate(iso), format);
+}
+
 export function parseDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number);
   return new Date(year, month - 1, day);
@@ -18,6 +24,16 @@ export function parseDate(dateStr: string): Date {
 
 export function getTodayString(format: 'YYYY-MM-DD' | 'DD/MM/YYYY' | 'MM/DD/YYYY' = 'YYYY-MM-DD'): string {
   return formatDate(new Date(), format);
+}
+
+/** Format an `HH:MM` string per the user's 12h/24h preference. */
+export function formatTime(hhmm: string, format: '12h' | '24h' = '24h'): string {
+  if (format === '24h' || !hhmm) return hhmm;
+  const [h, m] = hhmm.split(':').map(Number);
+  if (Number.isNaN(h)) return hhmm;
+  const period = h < 12 ? 'AM' : 'PM';
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}:${String(m ?? 0).padStart(2, '0')} ${period}`;
 }
 
 export function getDateString(date: Date): string {
@@ -107,22 +123,39 @@ function isScheduledOn(schedule: { type: string; days?: number[] }, date: Date):
   }
 }
 
-export function getStreakData(completions: Map<string, number>, habit: { schedule: { type: string; days?: number[] } }, shields: { usedAt?: string }[]): StreakData {
+export function getStreakData(completions: Map<string, number>, habit: { schedule: { type: string; days?: number[] } }, shields: { usedAt?: string }[], vacation?: { start?: string; end?: string }): StreakData {
   const shieldCount = shields.filter(s => !s.usedAt).length;
   const doneDates = Array.from(completions.keys()).filter(d => (completions.get(d) || 0) > 0).sort();
   const total = doneDates.length;
-  if (doneDates.length === 0) return { current: 0, longest: 0, total: 0, shields: shieldCount, isActive: false };
+  if (doneDates.length === 0) return { current: 0, longest: 0, total, shields: shieldCount, isActive: false };
+
+  const vStart = vacation?.start ? parseDate(vacation.start) : null;
+  const vEnd = vacation?.end ? parseDate(vacation.end) : null;
+  /** Days inside an active vacation window neither count toward nor break a streak. */
+  const onVacation = (d: Date): boolean => {
+    if (!vStart && !vEnd) return false;
+    const t = startOfDay(d).getTime();
+    if (vStart && t < startOfDay(vStart).getTime()) return false;
+    if (vEnd && t > startOfDay(vEnd).getTime()) return false;
+    return true;
+  };
 
   const done = new Set(doneDates);
   const today = startOfDay(new Date());
 
   // Current streak: walk backwards over scheduled days only.
   // If today is scheduled but not completed yet, don't break the streak — start from yesterday.
+  // Vacation days are skipped entirely.
   let current = 0;
   let cursor = new Date(today);
-  if (isScheduledOn(habit.schedule, cursor) && !done.has(getDateString(cursor))) cursor = subDays(cursor, 1);
+  if (onVacation(cursor)) {
+    while (onVacation(cursor)) cursor = subDays(cursor, 1);
+  } else if (isScheduledOn(habit.schedule, cursor) && !done.has(getDateString(cursor))) {
+    cursor = subDays(cursor, 1);
+  }
   let guard = 0;
   while (guard++ < 5000) {
+    if (onVacation(cursor)) { cursor = subDays(cursor, 1); continue; }
     if (!isScheduledOn(habit.schedule, cursor)) { cursor = subDays(cursor, 1); continue; }
     if (done.has(getDateString(cursor))) { current++; cursor = subDays(cursor, 1); } else break;
   }
@@ -132,6 +165,7 @@ export function getStreakData(completions: Map<string, number>, habit: { schedul
   let day = parseDate(doneDates[0]);
   guard = 0;
   while (day <= today && guard++ < 5000) {
+    if (onVacation(day)) { day = addDays(day, 1); continue; }
     if (isScheduledOn(habit.schedule, day)) {
       if (done.has(getDateString(day))) run++; else { longest = Math.max(longest, run); run = 0; }
     }

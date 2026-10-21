@@ -1,5 +1,5 @@
 import { store } from '../stores/appStore';
-import { getTodayString, getDateString, addDays, subDays, getYearStart, getDayOfYear, getHeatmapLevel } from '../utils/date';
+import { getTodayString, getDateString, addDays, subDays, getYearStart, getDayOfYear, getHeatmapLevel, formatDateString } from '../utils/date';
 import { createTerminalBlock, createEmptyState } from './TerminalUI';
 
 export class HeatmapComponent {
@@ -30,6 +30,7 @@ export class HeatmapComponent {
   }
 
   private createGrid(data: Map<string, number>, today: string, sel: string): HTMLElement {
+    const df = store.getSettings().dateFormat;
     const g = document.createElement('div'); g.className = 'heatmap-grid';
     const start = getYearStart(new Date(this.year, 0, 1));
     const fdow = start.getDay();
@@ -58,7 +59,7 @@ export class HeatmapComponent {
         const lvl = getHeatmapLevel(cnt, max);
         const td = ds === today, sd = ds === sel, fut = dt > new Date(today);
         let cls = `heatmap-cell level-${lvl}`; if (td) cls += ' today'; if (sd) cls += ' selected'; if (fut) cls += ' future'; if (cnt) cls += ' has-activity';
-        html += `<div class="${cls}" data-date="${ds}" data-count="${cnt}" data-level="${lvl}" title="${ds}: ${cnt} completion${cnt!==1?'s':''}" role="button" tabindex="0"></div>`;
+        html += `<div class="${cls}" data-date="${ds}" data-count="${cnt}" data-level="${lvl}" title="${formatDateString(ds, df)}: ${cnt} completion${cnt!==1?'s':''}" role="button" tabindex="0"></div>`;
       }
     }
     html += '</div>'; g.innerHTML = html;

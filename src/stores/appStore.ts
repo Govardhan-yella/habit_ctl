@@ -1,7 +1,7 @@
 import { Habit, Completion, Shield, Routine, Theme, User, UserSettings, SyncState, AppState, HabitMode, MoodLog, WaterLog, Note, Template } from '../types';
 import { THEMES, DEFAULT_THEME_ID, getTheme } from '../data/themes';
 import { getTodayString, getDateString, addDays, subDays, getDaysBetween, getStreakData, getHeatmapLevel } from '../utils/date';
-import { mix, rgba, heatRamp, isDark } from '../utils/color';
+import { mix, rgba, heatRamp, isDark, matte as matteColor } from '../utils/color';
 import { saveHabit, getAllHabits, deleteHabit, saveCompletion, getCompletionsByHabit, getAllCompletions, getUnsyncedCompletions, deleteCompletion, saveShield, getShieldsByHabit, getAllShields, saveRoutine, getAllRoutines, deleteRoutine, saveTheme, getAllThemes, deleteTheme, saveUser, getUser, saveSettings, getSettings, saveSyncState, getSyncState, addPendingChange, getPendingChanges, removePendingChange, updatePendingChangeRetries, clearAllData as clearAllDataStorage, exportAllData, importAllData } from '../services/storage';
 import { appwrite } from '../services/appwrite';
 
@@ -28,7 +28,7 @@ class AppStore {
   };
   private listeners: Set<Listener> = new Set(); private initialized = false; private ready = false;
   private skips: Set<string> = new Set();
-  private settings: UserSettings = { themeId: DEFAULT_THEME_ID, syncEnabled: true, iCloudSync: false, animations: true, hapticFeedback: true, weekStartsOn: 0, dateFormat: 'YYYY-MM-DD', timeFormat: '24h', language: 'en', passcodeEnabled: false, biometricEnabled: false, vacationMode: false };
+  private settings: UserSettings = { themeId: DEFAULT_THEME_ID, syncEnabled: true, iCloudSync: false, animations: true, hapticFeedback: true, weekStartsOn: 0, dateFormat: 'YYYY-MM-DD', timeFormat: '24h', language: 'en', matteMode: false, passcodeEnabled: false, biometricEnabled: false, vacationMode: false };
 
   constructor() { this.applyTheme(this.state.theme); }
 
@@ -98,6 +98,15 @@ class AppStore {
     const c = theme.colors;
     const set = (k: string, v: string) => r.style.setProperty(k, v);
 
+    // Optional matte mode: pull accents/status colours toward greyscale so themes
+    // read calm and low-chroma. Surfaces/backgrounds are left alone.
+    const matteOn = !!this.getSettings().matteMode;
+    const m = (hex: string) => (matteOn ? matteColor(hex, 0.7) : hex);
+
+    const accent = m(c.accent);
+    const accentAlt = m(c.accentAlt || c.accent);
+    const accentMuted = m(c.accentMuted);
+
     // Body text stays neutral (near-white on dark themes, near-black on light ones);
     // the theme's accent carries the colour in headings and highlights.
     const dark = isDark(c.bg);
@@ -108,15 +117,17 @@ class AppStore {
     set('--bg-secondary', c.bgSecondary);
     set('--fg', fg);
     set('--fg-muted', fgMuted);
-    set('--accent', c.accent);
-    set('--accent-muted', c.accentMuted);
-    set('--accent-2', c.accentAlt || c.accent);
-    set('--info', c.info || c.accent);
-    set('--border', rgba(fg, 0.1));
-    set('--success', c.success);
-    set('--warning', c.warning);
-    set('--error', c.error);
-    set('--ring', rgba(c.accent, 0.45));
+    set('--accent', accent);
+    set('--accent-muted', accentMuted);
+    set('--accent-2', accentAlt);
+    set('--info', m(c.info || c.accent));
+    // Built-in themes keep a neutral border so the UI stays calm; custom themes
+    // (Theme Editor) honour the border colour the user picked.
+    set('--border', theme.isCustom && c.border ? c.border : rgba(fg, 0.1));
+    set('--success', m(c.success));
+    set('--warning', m(c.warning));
+    set('--error', m(c.error));
+    set('--ring', rgba(accent, 0.45));
     set('--surface', c.bgSecondary);
     set('--surface-2', mix(c.bgSecondary, fg, 0.04));
     set('--surface-3', mix(c.bgSecondary, fg, 0.08));
@@ -125,7 +136,7 @@ class AppStore {
 
     // Heatmap always derives from the theme's own accent so every theme gets its own
     // colour and the base cell stays visible against the surface.
-    const [h0, h1, h2, h3, h4] = heatRamp(c.bgSecondary, c.accent);
+    const [h0, h1, h2, h3, h4] = heatRamp(c.bgSecondary, accent);
     set('--heatmap-0', h0);
     set('--heatmap-1', h1);
     set('--heatmap-2', h2);
@@ -133,6 +144,7 @@ class AppStore {
     set('--heatmap-4', h4);
 
     document.body.dataset.theme = theme.id;
+    document.body.dataset.matte = matteOn ? 'on' : 'off';
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', c.bg);
   }
@@ -142,10 +154,10 @@ class AppStore {
   getSettings(): UserSettings { return this.state.user?.settings || this.settings; }
   /** Persist a settings patch WITHOUT re-entering setTheme (avoids the old infinite loop). */
   private async persistSetting(s: Partial<UserSettings>): Promise<void> { const cur = this.getSettings(); const up = { ...cur, ...s }; this.settings = up; await saveSettings(up); if (this.state.user) this.setState({ user: { ...this.state.user, settings: up } }); else this.notify(); }
-  async updateSettings(s: Partial<UserSettings>): Promise<void> { await this.persistSetting(s); if (s.themeId) this.applyTheme(this.resolveTheme(s.themeId)); }
+  async updateSettings(s: Partial<UserSettings>): Promise<void> { await this.persistSetting(s); if (s.themeId || 'matteMode' in s) this.applyTheme(s.themeId ? this.resolveTheme(s.themeId) : this.state.theme); }
   /** Fire a haptic tick when the setting is enabled and the device supports it. */
   haptic(ms = 12): void { try { if (this.getSettings().hapticFeedback && typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(ms); } catch { /* unsupported */ } }
-  defaultSettings(): UserSettings { return { themeId: DEFAULT_THEME_ID, syncEnabled: true, iCloudSync: false, animations: true, hapticFeedback: true, weekStartsOn: 0, dateFormat: 'YYYY-MM-DD', timeFormat: '24h', language: 'en', passcodeEnabled: false, biometricEnabled: false, vacationMode: false }; }
+  defaultSettings(): UserSettings { return { themeId: DEFAULT_THEME_ID, syncEnabled: true, iCloudSync: false, animations: true, hapticFeedback: true, weekStartsOn: 0, dateFormat: 'YYYY-MM-DD', timeFormat: '24h', language: 'en', matteMode: false, passcodeEnabled: false, biometricEnabled: false, vacationMode: false }; }
 
   setView(v: AppState['view']): void { this.setState({ view: v }); }
   setSelectedDate(d: string): void { this.setState({ selectedDate: d }); }
@@ -162,7 +174,14 @@ class AppStore {
   getHabitCompletions(id: string): Completion[] { return this.state.completions.filter(c => c.habitId === id); }
   getHabitShields(id: string): Shield[] { return this.state.shields.filter(s => s.habitId === id); }
 
-  getHabitStreak(id: string) { const cs = this.getHabitCompletions(id); const h = this.state.habits.find(x => x.id === id); const ss = this.getHabitShields(id); const m = new Map<string, number>(); cs.forEach(c => m.set(c.date, (m.get(c.date) || 0) + c.value)); return getStreakData(m, h!, ss); }
+  getHabitStreak(id: string) { const cs = this.getHabitCompletions(id); const h = this.state.habits.find(x => x.id === id); const ss = this.getHabitShields(id); const m = new Map<string, number>(); cs.forEach(c => m.set(c.date, (m.get(c.date) || 0) + c.value)); const v = this.vacationWindow(); return getStreakData(m, h!, ss, v); }
+
+  /** Active vacation window (if any) so streaks pause instead of breaking. */
+  vacationWindow(): { start?: string; end?: string } | undefined {
+    const s = this.getSettings();
+    if (!s.vacationMode) return undefined;
+    return { start: s.vacationStartsAt, end: s.vacationEndsAt };
+  }
 
   getHeatmapData(year: number = new Date().getFullYear()): Map<string, number> { const m = new Map<string, number>(); for (const c of this.state.completions) { const y = parseInt(c.date.split('-')[0]); if (y === year) m.set(c.date, (m.get(c.date) || 0) + c.value); } return m; }
 

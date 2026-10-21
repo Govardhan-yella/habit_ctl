@@ -66,6 +66,7 @@ export interface Theme {
   colors: ThemeColors;
   isCustom: boolean;
   isPro: boolean;
+  variant?: 'dark' | 'light';
   fontFamily?: string;
   createdAt?: string;
 }
@@ -149,10 +150,12 @@ export interface UserSettings {
   dateFormat: 'YYYY-MM-DD' | 'DD/MM/YYYY' | 'MM/DD/YYYY';
   timeFormat: '12h' | '24h';
   language: string;
+  matteMode: boolean;
   passcodeEnabled: boolean;
   passcode?: string;
   biometricEnabled: boolean;
   vacationMode: boolean;
+  vacationStartsAt?: string;
   vacationEndsAt?: string;
   customCSS?: string;
   sortBy?: 'alpha' | 'due' | 'streak' | 'progress' | 'created';

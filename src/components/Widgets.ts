@@ -32,6 +32,22 @@ const WIDGET_META: { id: string; name: string; desc: string }[] = [
 ];
 
 const WIDGETS_KEY = 'hc-widgets';
+const DEFAULT_FOCUS_PRESETS = [15, 25, 45, 50, 90];
+const DEFAULT_BREAK_PRESETS = [5, 10, 15, 20, 30];
+const TIMER_PRESETS_KEY = 'hc-timer-presets';
+
+function loadTimerPresets(): { focus: number[]; break: number[] } {
+  try {
+    const raw = JSON.parse(localStorage.getItem(TIMER_PRESETS_KEY) || 'null');
+    const clean = (arr: unknown, fallback: number[]): number[] => {
+      if (!Array.isArray(arr)) return [...fallback];
+      const nums = [...new Set(arr.map(n => Number(n)).filter(n => Number.isFinite(n) && n >= 1))].slice(0, 8);
+      return nums.length ? nums : [...fallback];
+    };
+    if (raw) return { focus: clean(raw.focus, DEFAULT_FOCUS_PRESETS), break: clean(raw.break, DEFAULT_BREAK_PRESETS) };
+  } catch { /* ignore */ }
+  return { focus: [...DEFAULT_FOCUS_PRESETS], break: [...DEFAULT_BREAK_PRESETS] };
+}
 
 function defaultWidgetCfg(): WidgetCfg[] {
   return WIDGET_META.map(m => ({ id: m.id, visible: true, size: 'md' as WidgetSize }));
@@ -62,12 +78,15 @@ export class WidgetRail {
 
   /* ── Combined focus / break timer ────────────────────────── */
   private timerTimer?: number;
+  private presets = loadTimerPresets();
+  private focusPresets: number[] = this.presets.focus;
+  private breakPresets: number[] = this.presets.break;
   private timer = {
     mode: 'focus' as 'focus' | 'break',
-    remaining: 25 * 60,
+    remaining: this.presets.focus[0] * 60,
     running: false,
-    focusMin: 25,
-    breakMin: 5,
+    focusMin: this.presets.focus[0],
+    breakMin: this.presets.break[0],
   };
   private focusLog: { date: string; minutes: number }[] = JSON.parse(localStorage.getItem('hc-focus') || '[]');
   private breakLog: { date: string; minutes: number }[] = JSON.parse(localStorage.getItem('hc-breaks') || '[]');
@@ -390,19 +409,40 @@ export class WidgetRail {
     const content = document.createElement('div');
     content.className = 'wcfg-timer';
     content.innerHTML = `
-      <div class="form-group"><label>Focus presets (min, comma separated)</label><input type="text" id="tc-focus" value="${this.timer.focusMin}" placeholder="15,25,45"></div>
-      <div class="form-group"><label>Break presets (min, comma separated)</label><input type="text" id="tc-break" value="${this.timer.breakMin}" placeholder="5,10,15"></div>`;
+      <div class="form-group"><label>Focus presets (minutes, comma separated)</label><input type="text" id="tc-focus" value="${this.focusPresets.join(',')}" placeholder="15,25,45"><span class="wcfg-hint">1–180, max 8 values</span></div>
+      <div class="form-group"><label>Break presets (minutes, comma separated)</label><input type="text" id="tc-break" value="${this.breakPresets.join(',')}" placeholder="5,10,15"><span class="wcfg-hint">1–60, max 8 values</span></div>
+      <div class="form-actions"><button class="btn btn-ghost" id="tc-reset">Reset defaults</button><button class="btn btn-primary" id="tc-save">Save presets</button></div>`;
     createModal('Customize timer', content, () => { /* noop */ });
-    const focus = content.querySelector('#tc-focus') as HTMLInputElement;
-    const brk = content.querySelector('#tc-break') as HTMLInputElement;
-    focus.addEventListener('change', () => {
-      const v = parseInt(focus.value, 10);
-      if (!isNaN(v)) this.timer.focusMin = v;
+
+    const focusInput = content.querySelector('#tc-focus') as HTMLInputElement;
+    const breakInput = content.querySelector('#tc-break') as HTMLInputElement;
+
+    const parse = (raw: string, max: number): number[] =>
+      [...new Set(raw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isFinite(n) && n >= 1 && n <= max))].slice(0, 8);
+
+    const save = (): void => {
+      const f = parse(focusInput.value, 180);
+      const b = parse(breakInput.value, 60);
+      if (f.length) this.focusPresets = f;
+      if (b.length) this.breakPresets = b;
+      if (!f.includes(this.timer.focusMin)) this.timer.focusMin = f[0] ?? 25;
+      if (!b.includes(this.timer.breakMin)) this.timer.breakMin = b[0] ?? 5;
+      try { localStorage.setItem('hc-timer-presets', JSON.stringify({ focus: this.focusPresets, break: this.breakPresets })); } catch { /* ignore */ }
+      if (this.timer.mode === 'focus' && !this.timer.running) this.timer.remaining = this.timer.focusMin * 60;
+      if (this.timer.mode === 'break' && !this.timer.running) this.timer.remaining = this.timer.breakMin * 60;
+      this.renderTimer();
+      createToast('Timer presets saved', 'success');
+      (document.querySelector('.modal-overlay') as HTMLElement | null)?.remove();
+    };
+
+    content.querySelector('#tc-save')?.addEventListener('click', save);
+    content.querySelector('#tc-reset')?.addEventListener('click', () => {
+      this.focusPresets = [...DEFAULT_FOCUS_PRESETS];
+      this.breakPresets = [...DEFAULT_BREAK_PRESETS];
+      focusInput.value = this.focusPresets.join(',');
+      breakInput.value = this.breakPresets.join(',');
     });
-    brk.addEventListener('change', () => {
-      const v = parseInt(brk.value, 10);
-      if (!isNaN(v)) this.timer.breakMin = v;
-    });
+    content.addEventListener('keydown', e => { if ((e as KeyboardEvent).key === 'Enter') save(); });
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -601,8 +641,8 @@ export class WidgetRail {
     const history = size === 'lg'
       ? `<div class="focus-history"><span class="fh-label">Today</span><div class="fh-bar"><div style="width:${Math.min(100, (st.focusMin / 120) * 100)}%"></div></div><span class="fh-val">${st.focusMin}m</span></div>`
       : '';
-    const presetFocus = [15, 25, 45, 50, 90].map(m => `<button class="btn btn-sm ${this.timer.focusMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-focus-preset" data-min="${m}">${m}m</button>`).join('');
-    const presetBreak = [5, 10, 15, 20, 30].map(m => `<button class="btn btn-sm ${this.timer.breakMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-break-preset" data-min="${m}">${m}m</button>`).join('');
+    const presetFocus = this.focusPresets.map(m => `<button class="btn btn-sm ${this.timer.focusMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-focus-preset" data-min="${m}">${m}m</button>`).join('');
+    const presetBreak = this.breakPresets.map(m => `<button class="btn btn-sm ${this.timer.breakMin === m ? 'btn-primary' : 'btn-ghost'}" data-act="timer-break-preset" data-min="${m}">${m}m</button>`).join('');
     el.innerHTML = `
       <span class="widget-title">Focus timer${size === 'lg' ? ` <span class="widget-sub">${st.focusSessions} sessions</span>` : ''}</span>
       <div class="focus-mode ${this.timer.running ? 'running' : ''}">${label} · ${mm}:${ss}</div>

@@ -86,7 +86,7 @@ class AppwriteService {
   }
 
   defaultSettings(): UserSettings {
-    return { themeId: 'tokyo-night', syncEnabled: true, iCloudSync: false, animations: true, hapticFeedback: true, weekStartsOn: 0, dateFormat: 'YYYY-MM-DD', timeFormat: '24h', language: 'en', passcodeEnabled: false, biometricEnabled: false, vacationMode: false };
+    return { themeId: 'tokyo-night', syncEnabled: true, iCloudSync: false, animations: true, hapticFeedback: true, weekStartsOn: 0, dateFormat: 'YYYY-MM-DD', timeFormat: '24h', language: 'en', matteMode: false, passcodeEnabled: false, biometricEnabled: false, vacationMode: false };
   }
 
   mapUser(doc: any): User {

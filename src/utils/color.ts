@@ -47,3 +47,25 @@ export function isDark(hex: string): boolean {
   return luminance(hex) < 0.5;
 }
 
+/** Pull a colour toward its greyscale twin. `amount` 0 = unchanged, 1 = fully grey.
+ *  Used to give themes a matte, low-chroma feel while keeping relative lightness. */
+export function desaturate(hex: string, amount: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  const grey = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const t = Math.max(0, Math.min(1, amount));
+  const to = (v: number) => Math.round(v + (grey - v) * t);
+  return '#' + ((1 << 24) + (to(r) << 16) + (to(g) << 8) + to(b)).toString(16).slice(1);
+}
+
+/** Reduce a colour's chroma and soften its brightness so accents read as calm and
+ *  desaturated rather than vivid. `amount` 0 = unchanged, 1 = full matte. */
+export function matte(hex: string, amount: number): string {
+  const t = Math.max(0, Math.min(1, amount));
+  const muted = desaturate(hex, t);
+  const { r, g, b } = hexToRgb(muted);
+  // Pull brightness toward a mid-tone (128) so nothing stays neon-bright.
+  const dim = (v: number) => Math.round(v + (128 - v) * (0.35 * t));
+  return '#' + ((1 << 24) + (dim(r) << 16) + (dim(g) << 8) + dim(b)).toString(16).slice(1);
+}
+
+

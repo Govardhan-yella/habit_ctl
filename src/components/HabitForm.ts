@@ -3,7 +3,21 @@ import { Habit, HabitMode, ScheduleType, Reminder, Template } from '../types';
 import { requestNotificationPermission } from '../services/reminders';
 import { createModal, createToast } from './TerminalUI';
 
-const ICONS = ['🏃', '💪', '📚', '🧘', '💧', '🥗', '😴', '🧠', '✍️', '🎯', '💻', '🎸', '🚴', '🏊', '🧹', '💰', '🌱', '☀️', '🌙', '⏰', '❤️', '🔥', '✅', '📝', '🚭', '🦷', '🧴', '🍎', '🎨', '🎵'];
+const ICON_GROUPS: { label: string; icons: string[] }[] = [
+  { label: 'Fitness', icons: ['🏃', '💪', '🚴', '🏊', '🧘', '🤸', '🥊', '⚽', '🏋️', '🚶'] },
+  { label: 'Mind & Learn', icons: ['📚', '🧠', '✍️', '📝', '🎓', '💡', '🗣️', '🌍'] },
+  { label: 'Health', icons: ['💧', '🥗', '😴', '🍎', '❤️', '🦷', '🧴', '💊', '🚭', '🧘'] },
+  { label: 'Work & Money', icons: ['💻', '💰', '📈', '🗂️', '✉️', '📅', '⚙️', '🎯'] },
+  { label: 'Creative', icons: ['🎸', '🎨', '🎵', '📷', '🎬', '✏️', '🧶', '🎹'] },
+  { label: 'Life', icons: ['🌱', '☀️', '🌙', '⏰', '🔥', '✅', '🧹', '🐶', '🙏', '🎁'] },
+];
+
+const COLOR_SWATCHES = [
+  '#7aa2f7', '#bb9af7', '#f7768e', '#ff9e64', '#e0af68', '#9ece6a',
+  '#73daca', '#7dcfff', '#b4f9f8', '#ff7edb', '#c0caf5', '#a9b1d6',
+  '#4ade80', '#fbbf24', '#f87171', '#38bdf8', '#a78bfa', '#fb7185',
+];
+
 
 /** Open the New Habit / Edit Habit modal. Pass a habit to edit, omit to create. */
 export function openHabitForm(habit?: Habit): void {
@@ -18,8 +32,26 @@ export function openHabitForm(habit?: Habit): void {
   content.innerHTML = `
     ${!isEdit && templates.length ? `<div class="form-group"><label>Start from template</label><select id="h-template"><option value="">— none —</option>${templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select></div>` : ''}
     <div class="form-group"><label>Name</label><input type="text" id="h-name" required placeholder="e.g., Morning run" value="${habit?.name ?? ''}"></div>
-    <div class="form-group"><label>Icon</label><input type="text" id="h-icon" value="${habit?.icon ?? '🏃'}" maxlength="2"><div class="icon-picker">${ICONS.map(ic => `<button type="button" class="icon-pick" data-ic="${ic}">${ic}</button>`).join('')}</div></div>
-    <div class="form-group"><label>Color</label><input type="color" id="h-color" value="${habit?.color ?? '#7aa2f7'}"></div>
+    <div class="form-group">
+      <label>Logo</label>
+      <div class="logo-row">
+        <div class="logo-preview" id="h-logo-preview">${habit?.icon?.startsWith('data:') ? `<img src="${habit.icon}" alt="">` : (habit?.icon ?? '🏃')}</div>
+        <input type="text" id="h-icon" value="${habit?.icon && !habit.icon.startsWith('data:') ? habit.icon : ''}" maxlength="4" placeholder="Type or pick an emoji">
+        <label class="logo-upload" title="Upload a custom image">
+          <input type="file" id="h-logo-file" accept="image/*" hidden>⬆ Upload
+        </label>
+      </div>
+      <div class="icon-groups">
+        ${ICON_GROUPS.map(g => `<div class="icon-group"><span class="icon-group-label">${g.label}</span><div class="icon-picker">${g.icons.map(ic => `<button type="button" class="icon-pick" data-ic="${ic}">${ic}</button>`).join('')}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Colour</label>
+      <div class="color-row">
+        <input type="color" id="h-color" value="${habit?.color ?? '#7aa2f7'}">
+        <div class="color-swatches">${COLOR_SWATCHES.map(c => `<button type="button" class="color-swatch" data-color="${c}" style="background:${c}"></button>`).join('')}</div>
+      </div>
+    </div>
     <div class="form-group"><label>Mode</label><select id="h-mode">${modeOpts.map(m => `<option value="${m}" ${habit?.mode === m ? 'selected' : ''}>${m[0].toUpperCase()}${m.slice(1)}</option>`).join('')}</select></div>
     <div class="form-group" id="target-group" style="display:${habit && habit.mode !== 'checkbox' ? 'block' : 'none'}"><label>Target</label><input type="number" id="h-target" value="${habit?.target ?? 1}" min="1"></div>
     <div class="form-group" id="unit-group" style="display:${habit && habit.mode !== 'checkbox' ? 'block' : 'none'}"><label>Unit (optional)</label><input type="text" id="h-unit" placeholder="km, pages, min" value="${habit?.unit ?? ''}"></div>
@@ -67,16 +99,54 @@ export function openHabitForm(habit?: Habit): void {
     });
   }
 
+  const iconInput = content.querySelector('#h-icon') as HTMLInputElement;
+  const logoPreview = content.querySelector('#h-logo-preview') as HTMLElement;
+  const colorInput = content.querySelector('#h-color') as HTMLInputElement;
+
+  function setLogo(value: string): void {
+    iconInput.value = value.startsWith('data:') ? '' : value;
+    logoPreview.innerHTML = value.startsWith('data:') ? `<img src="${value}" alt="">` : value;
+    logoPreview.dataset.value = value;
+  }
+  function currentLogo(): string {
+    const dataVal = logoPreview.dataset.value;
+    if (dataVal && dataVal.startsWith('data:')) return dataVal;
+    return (iconInput.value || '🏃').trim();
+  }
+
   content.querySelectorAll('.icon-pick').forEach(btn => btn.addEventListener('click', () => {
-    (content.querySelector('#h-icon') as HTMLInputElement).value = btn.getAttribute('data-ic')!;
+    setLogo(btn.getAttribute('data-ic')!);
     content.querySelectorAll('.icon-pick').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
   }));
 
+  iconInput.addEventListener('input', () => setLogo(iconInput.value || '🏃'));
+
+  content.querySelector('#h-logo-file')?.addEventListener('change', e => {
+    const f = (e.target as HTMLInputElement).files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => { setLogo(String(reader.result)); createToast('Logo added', 'success'); };
+    reader.readAsDataURL(f);
+  });
+
+  function syncColorActive(): void {
+    content.querySelectorAll('.color-swatch').forEach(s => {
+      s.classList.toggle('active', s.getAttribute('data-color')?.toLowerCase() === colorInput.value.toLowerCase());
+    });
+  }
+  content.querySelectorAll('.color-swatch').forEach(btn => btn.addEventListener('click', () => {
+    colorInput.value = btn.getAttribute('data-color')!;
+    syncColorActive();
+  }));
+  colorInput.addEventListener('input', syncColorActive);
+  syncColorActive();
+
   function applyTemplate(t: Template): void {
     (content.querySelector('#h-name') as HTMLInputElement).value = t.name;
-    (content.querySelector('#h-icon') as HTMLInputElement).value = t.icon;
+    setLogo(t.icon);
     (content.querySelector('#h-color') as HTMLInputElement).value = t.color;
+    syncColorActive();
     (content.querySelector('#h-mode') as HTMLSelectElement).value = t.mode;
     (content.querySelector('#h-target') as HTMLInputElement).value = String(t.target);
     (content.querySelector('#h-unit') as HTMLInputElement).value = t.unit || '';
@@ -112,7 +182,7 @@ export function openHabitForm(habit?: Habit): void {
     const st = (content.querySelector('#h-sched') as HTMLSelectElement).value as ScheduleType;
     const schedule: { type: ScheduleType; days?: number[] } = { type: st };
     if (st === 'custom') schedule.days = Array.from(content.querySelectorAll('#custom-days input:checked')).map(cb => parseInt((cb as HTMLInputElement).value));
-    const icon = (content.querySelector('#h-icon') as HTMLInputElement).value || '✦';
+    const icon = currentLogo() || '✦';
     const color = (content.querySelector('#h-color') as HTMLInputElement).value;
     const target = parseInt((content.querySelector('#h-target') as HTMLInputElement).value) || 1;
     const unit = (content.querySelector('#h-unit') as HTMLInputElement).value || undefined;

@@ -11,6 +11,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#bb9af7', info: '#7dcfff',
       heatmap: { level0: '#1c2030', level1: '#263a63', level2: '#3a5aa8', level3: '#567ed0', level4: '#7aa2f7' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -23,6 +24,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#bb9af7', info: '#7dcfff',
       heatmap: { level0: '#282d44', level1: '#34426f', level2: '#4a61a0', level3: '#6382cc', level4: '#7aa2f7' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -35,6 +37,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#ff79c6', info: '#8be9fd',
       heatmap: { level0: '#2c2e3c', level1: '#4a3f70', level2: '#6a54a0', level3: '#9474cf', level4: '#bd93f9' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -47,6 +50,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#cba6f7', info: '#89dceb',
       heatmap: { level0: '#24253a', level1: '#33406b', level2: '#4f66a8', level3: '#6d90d8', level4: '#89b4fa' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -59,6 +63,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#c6a0f6', info: '#91d7e3',
       heatmap: { level0: '#2a2d44', level1: '#384b7a', level2: '#5573b4', level3: '#718fd8', level4: '#8aadf4' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -71,6 +76,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#b48ead', info: '#81a1c1',
       heatmap: { level0: '#333b49', level1: '#3f5566', level2: '#4f7382', level3: '#6a9aa8', level4: '#88c0d0' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -83,6 +89,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#d3869b', info: '#83a598',
       heatmap: { level0: '#2c2a29', level1: '#5c4a1c', level2: '#8a6a1e', level3: '#b3851f', level4: '#d79921' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -95,6 +102,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#c678dd', info: '#56b6c2',
       heatmap: { level0: '#2c313b', level1: '#2f4a68', level2: '#3f6fa0', level3: '#5090ca', level4: '#61afef' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -107,6 +115,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#bc8cff', info: '#39c5cf',
       heatmap: { level0: '#11161d', level1: '#143a63', level2: '#1f5fae', level3: '#3a86e0', level4: '#58a6ff' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -119,6 +128,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#d2a6ff', info: '#59c2ff',
       heatmap: { level0: '#10141b', level1: '#3a3418', level2: '#6b5a1f', level3: '#b08533', level4: '#e6b450' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -131,6 +141,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#d4bfff', info: '#73d0ff',
       heatmap: { level0: '#232838', level1: '#4a4a2f', level2: '#7a6a2f', level3: '#c2a04a', level4: '#ffcc66' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -143,6 +154,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#c4a7e7', info: '#9ccfd8',
       heatmap: { level0: '#201d30', level1: '#4a3f63', level2: '#7a6a94', level3: '#b798b6', level4: '#ebbcba' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -155,6 +167,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#d699b6', info: '#7fbbb3',
       heatmap: { level0: '#303a3f', level1: '#4a5a4a', level2: '#6d8a5f', level3: '#8aa871', level4: '#a7c080' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -167,6 +180,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#957fb8', info: '#7fb4ca',
       heatmap: { level0: '#22222e', level1: '#35456a', level2: '#4f679e', level3: '#6685c4', level4: '#7e9cd8' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -179,6 +193,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#fede5d', info: '#36f9f6',
       heatmap: { level0: '#2e2a48', level1: '#6b3f77', level2: '#a8549f', level3: '#e06ac2', level4: '#ff7edb' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -191,6 +206,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#b8b8b8', info: '#d4d4d4',
       heatmap: { level0: '#0a0a0a', level1: '#2b2b2b', level2: '#4d4d4d', level3: '#8a8a8a', level4: '#f5f5f5' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -203,6 +219,7 @@ export const THEMES: Theme[] = [
       accentAlt: '#00ffaa', info: '#00ffff',
       heatmap: { level0: '#0a0a0a', level1: '#0a3d0a', level2: '#0f6b0f', level3: '#12a812', level4: '#00ff00' }
     },
+    variant: 'dark',
     isCustom: false, isPro: false
   },
   {
@@ -215,6 +232,33 @@ export const THEMES: Theme[] = [
       accentAlt: '#f5a97f', info: '#e8c07d',
       heatmap: { level0: '#120d07', level1: '#3a2a12', level2: '#6b4a1e', level3: '#b07a2a', level4: '#e8a33d' }
     },
+    variant: 'dark',
+    isCustom: false, isPro: false
+  },
+  {
+    id: 'github-light',
+    name: 'GitHub Light',
+    colors: {
+      bg: '#ffffff', bgSecondary: '#f6f8fa', fg: '#1f2328', fgMuted: '#6e7781',
+      accent: '#0969da', accentMuted: '#8cbcdf', border: '#d1d9e0',
+      success: '#1a7f37', warning: '#9a6700', error: '#cf222e',
+      accentAlt: '#8250df', info: '#0550ae',
+      heatmap: { level0: '#ebedf0', level1: '#9be9a8', level2: '#40c463', level3: '#30a14e', level4: '#216e39' }
+    },
+    variant: 'light',
+    isCustom: false, isPro: false
+  },
+  {
+    id: 'solarized-light',
+    name: 'Solarized Light',
+    colors: {
+      bg: '#fdf6e3', bgSecondary: '#eee8d5', fg: '#073642', fgMuted: '#93a1a1',
+      accent: '#268bd2', accentMuted: '#7fb3d5', border: '#ddd6c1',
+      success: '#859900', warning: '#b58900', error: '#dc322f',
+      accentAlt: '#d33682', info: '#2aa198',
+      heatmap: { level0: '#eee8d5', level1: '#b8d8c0', level2: '#7fc0a0', level3: '#4a9d7f', level4: '#268bd2' }
+    },
+    variant: 'light',
     isCustom: false, isPro: false
   }
 ];

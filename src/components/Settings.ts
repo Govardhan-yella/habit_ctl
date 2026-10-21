@@ -52,13 +52,14 @@ export class SettingsComponent {
     w.appendChild(this.section('Sync', `
       ${cloud ? '' : '<div class="setting-row"><span class="setting-label">Cloud sync</span><span class="setting-value">not configured</span></div>'}
       <div class="setting-row"><label class="toggle"><input type="checkbox" id="sync-enabled" ${cloud ? '' : 'disabled'} ${settings.syncEnabled?'checked':''}><span class="toggle-slider"></span></label><span>Cloud Sync</span></div>
-      <div class="setting-row"><label class="toggle"><input type="checkbox" id="icloud-sync" ${settings.iCloudSync?'checked':''}><span class="toggle-slider"></span></label><span>iCloud Backup</span></div>
+      <div class="setting-row"><label class="toggle"><input type="checkbox" id="icloud-sync" ${settings.iCloudSync?'checked':''}><span class="toggle-slider"></span></label><span>Durable storage <span class="setting-hint">stop the browser evicting data</span></span></div>
       <div class="setting-row"><span class="setting-label">Status</span><span class="setting-value">${cloud ? s.sync.status : 'offline'}${cloud && s.sync.lastSync?` • Last: ${new Date(s.sync.lastSync).toLocaleTimeString()}`:''}</span></div>
       <div class="setting-actions">${cloud ? '<button class="btn btn-primary btn-sm" id="sync-now">Sync Now</button>' : ''}<button class="btn btn-ghost btn-sm" id="export">Export</button><button class="btn btn-ghost btn-sm" id="import">Import</button></div>
     `));
 
     // Appearance section
     w.appendChild(this.section('Appearance', `
+      <div class="setting-row"><label class="toggle"><input type="checkbox" id="matte" ${settings.matteMode?'checked':''}><span class="toggle-slider"></span></label><span>Matte colours <span class="setting-hint">calm, low-chroma accents</span></span></div>
       <div class="setting-row"><label class="toggle"><input type="checkbox" id="animations" ${settings.animations?'checked':''}><span class="toggle-slider"></span></label><span>Animations</span></div>
       <div class="setting-row"><label class="toggle"><input type="checkbox" id="haptics" ${settings.hapticFeedback?'checked':''}><span class="toggle-slider"></span></label><span>Haptic Feedback</span></div>
       <div class="setting-row"><span class="setting-label">Week Starts</span><select id="week-start"><option value="0" ${settings.weekStartsOn===0?'selected':''}>Sunday</option><option value="1" ${settings.weekStartsOn===1?'selected':''}>Monday</option></select></div>
@@ -71,8 +72,13 @@ export class SettingsComponent {
     // Privacy section
     w.appendChild(this.section('Privacy', `
       <div class="setting-row"><label class="toggle"><input type="checkbox" id="passcode" ${settings.passcodeEnabled?'checked':''}><span class="toggle-slider"></span></label><span>Passcode Lock</span></div>
-      <div class="setting-row"><label class="toggle"><input type="checkbox" id="biometric" ${settings.biometricEnabled?'checked':''} ${!settings.passcodeEnabled?'disabled':''}><span class="toggle-slider"></span></label><span>Face ID / Touch ID</span></div>
-      <div class="setting-row"><label class="toggle"><input type="checkbox" id="vacation" ${settings.vacationMode?'checked':''}><span class="toggle-slider"></span></label><span>Vacation Mode</span></div>
+      <div class="setting-row"><label class="toggle"><input type="checkbox" id="vacation" ${settings.vacationMode?'checked':''}><span class="toggle-slider"></span></label><span>Vacation Mode <span class="setting-hint">pauses streaks</span></span></div>
+      <div class="setting-row" id="vacation-range-row" style="display:${settings.vacationMode?'flex':'none'}">
+        <span class="setting-label">Vacation window</span>
+        <input type="date" id="vacation-start" value="${settings.vacationStartsAt || ''}">
+        <span class="setting-hint">→</span>
+        <input type="date" id="vacation-end" value="${settings.vacationEndsAt || ''}">
+      </div>
     `));
 
     // Danger zone
@@ -104,7 +110,11 @@ export class SettingsComponent {
     const custom = store.getState().themes.filter(t => t.isCustom);
     const category = (title: string, cards: string) =>
       `<div class="theme-category"><h4>${title}</h4><div class="theme-grid">${cards}</div></div>`;
-    let html = category('Free', free.map(t => this.themeCard(t, current)).join(''));
+    const isLight = (t: Theme) => t.variant === 'light';
+    const darkFree = free.filter(t => !isLight(t));
+    const lightFree = free.filter(isLight);
+    let html = category('Dark', darkFree.map(t => this.themeCard(t, current)).join(''));
+    if (lightFree.length) html += category('Light', lightFree.map(t => this.themeCard(t, current)).join(''));
     if (pro.length) html += category('Pro', pro.map(t => this.themeCard(t, current)).join(''));
     html += category('Custom',
       custom.map(t => this.themeCard(t, current, true)).join('') +
@@ -126,7 +136,22 @@ export class SettingsComponent {
     this.c.querySelector('#signup')?.addEventListener('click', () => this.showAuth('signup'));
     this.c.querySelector('#apple')?.addEventListener('click', () => store.signInWithApple().catch(()=>createToast('Apple sign in not configured','error')));
     this.c.querySelector('#sync-now')?.addEventListener('click', () => store.syncWithCloud());
-    this.c.querySelector('#export')?.addEventListener('click', async () => { const json=await store.exportData(); navigator.clipboard.writeText(json); createToast('Exported to clipboard','success'); });
+    this.c.querySelector('#export')?.addEventListener('click', async () => {
+      const json = await store.exportData();
+      try { await navigator.clipboard.writeText(json); } catch { /* clipboard may be blocked */ }
+      try {
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `habit_ctl-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        createToast('Backup downloaded (also copied)', 'success');
+      } catch { createToast('Exported to clipboard', 'success'); }
+    });
     this.c.querySelector('#import')?.addEventListener('click', () => { const input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=async e=>{const f=(e.target as HTMLInputElement).files?.[0]; if(f){const t=await f.text(); await store.importData(t); createToast('Imported','success');}}; input.click(); });
     this.c.querySelector('#clear')?.addEventListener('click', () => { if(confirm('Delete ALL data? This cannot be undone.')) { store.clearAllData(); createToast('Data cleared','success'); } });
     this.c.querySelectorAll('.theme-card[data-theme]').forEach(b=>b.addEventListener('click',()=>store.setTheme(b.getAttribute('data-theme')!)));
@@ -137,6 +162,7 @@ export class SettingsComponent {
     this.c.querySelector('#sync-enabled')?.addEventListener('change', e=>store.updateSettings({syncEnabled:(e.target as HTMLInputElement).checked}));
     this.c.querySelector('#icloud-sync')?.addEventListener('change', async e=>{ const on=(e.target as HTMLInputElement).checked; await store.updateSettings({iCloudSync:on}); if(on){ try{ const persisted = navigator.storage?.persist ? await navigator.storage.persist() : false; createToast(persisted?'Durable storage granted':'Kept data offline (browser may evict)','info'); }catch{ createToast('Could not request durable storage','warning'); } } });
     this.c.querySelector('#animations')?.addEventListener('change', e=>store.updateSettings({animations:(e.target as HTMLInputElement).checked}));
+    this.c.querySelector('#matte')?.addEventListener('change', e=>store.updateSettings({matteMode:(e.target as HTMLInputElement).checked}));
     this.c.querySelector('#haptics')?.addEventListener('change', e=>store.updateSettings({hapticFeedback:(e.target as HTMLInputElement).checked}));
     this.c.querySelector('#week-start')?.addEventListener('change', e=>store.updateSettings({weekStartsOn:parseInt((e.target as HTMLSelectElement).value) as 0|1}));
     this.c.querySelector('#date-fmt')?.addEventListener('change', e=>store.updateSettings({dateFormat:(e.target as HTMLSelectElement).value as any}));
@@ -157,7 +183,19 @@ export class SettingsComponent {
       this.render();
     });
     this.c.querySelector('#biometric')?.addEventListener('change', e=>store.updateSettings({biometricEnabled:(e.target as HTMLInputElement).checked}));
-    this.c.querySelector('#vacation')?.addEventListener('change', e=>store.updateSettings({vacationMode:(e.target as HTMLInputElement).checked}));
+    this.c.querySelector('#vacation')?.addEventListener('change', e=>{
+      const on = (e.target as HTMLInputElement).checked;
+      if (on) {
+        const s = store.getSettings();
+        const start = s.vacationStartsAt || new Date().toISOString().slice(0, 10);
+        const end = s.vacationEndsAt || new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+        void store.updateSettings({ vacationMode: true, vacationStartsAt: start, vacationEndsAt: end }).then(() => this.render());
+      } else {
+        void store.updateSettings({ vacationMode: false }).then(() => this.render());
+      }
+    });
+    this.c.querySelector('#vacation-start')?.addEventListener('change', e=>store.updateSettings({vacationStartsAt:(e.target as HTMLInputElement).value}));
+    this.c.querySelector('#vacation-end')?.addEventListener('change', e=>store.updateSettings({vacationEndsAt:(e.target as HTMLInputElement).value}));
   }
 
   private showAuth(mode: 'signin'|'signup') {
@@ -184,7 +222,7 @@ export class SettingsComponent {
     });
   }
 
-  defaultSettings(): UserSettings { return { themeId: 'tokyo-night', syncEnabled: true, iCloudSync: false, animations: true, hapticFeedback: true, weekStartsOn: 0, dateFormat: 'YYYY-MM-DD', timeFormat: '24h', language: 'en', passcodeEnabled: false, biometricEnabled: false, vacationMode: false }; }
+  defaultSettings(): UserSettings { return { themeId: 'tokyo-night', syncEnabled: true, iCloudSync: false, animations: true, hapticFeedback: true, weekStartsOn: 0, dateFormat: 'YYYY-MM-DD', timeFormat: '24h', language: 'en', matteMode: false, passcodeEnabled: false, biometricEnabled: false, vacationMode: false }; }
 }
 
 export function createSettings(c: HTMLElement) { return new SettingsComponent(c); }

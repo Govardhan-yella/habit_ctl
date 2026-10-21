@@ -5,7 +5,9 @@ function streakOf(habit: Habit, state: AppState): { current: number; longest: nu
   const m = new Map<string, number>();
   for (const c of state.completions) if (c.habitId === habit.id) m.set(c.date, c.value);
   const shields = state.shields.filter(s => s.habitId === habit.id);
-  const st = getStreakData(m, habit, shields);
+  const s = state.user?.settings;
+  const vacation = s?.vacationMode ? { start: s.vacationStartsAt, end: s.vacationEndsAt } : undefined;
+  const st = getStreakData(m, habit, shields, vacation);
   return { current: st.current, longest: st.longest };
 }
 
