@@ -1,5 +1,5 @@
 import { store } from '../stores/appStore';
-import { UserSettings, Theme } from '../types';
+import { UserSettings, Theme, SyncProviderId, SyncConfig } from '../types';
 import { THEMES, getTheme, getFreeThemes, getProThemes } from '../data/themes';
 import { canInstall, promptInstall, onPwaChange } from '../services/pwa';
 import { notificationPermission, requestNotificationPermission } from '../services/reminders';
@@ -8,13 +8,68 @@ import { createTerminalBlock, createEmptyState, createModal, createToast, create
 
 export class SettingsComponent {
   private c: HTMLElement; private u: () => void; private up: () => void;
-  constructor(c: HTMLElement) { this.c = c; this.u = store.subscribe(() => this.render()); this.up = onPwaChange(() => this.render()); this.render(); }
+  private writing = 0;
+  private pendingRender = false;
+
+  constructor(c: HTMLElement) {
+    this.c = c;
+    this.u = store.subscribe(() => {
+      if (this.writing > 0) { this.pendingRender = true; return; }
+      const active = document.activeElement as HTMLElement | null;
+      if (active && this.c.contains(active) && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
+        this.pendingRender = true;
+        return;
+      }
+      this.pendingRender = false;
+      this.render();
+    });
+    this.up = onPwaChange(() => this.render());
+    this.c.addEventListener('focusout', () => {
+      setTimeout(() => {
+        const a = document.activeElement as HTMLElement | null;
+        if (this.pendingRender && (!a || !this.c.contains(a))) {
+          this.pendingRender = false;
+          this.render();
+        }
+      }, 0);
+    });
+    this.render();
+  }
   destroy() { this.u(); this.up(); }
+
+  private async write(patch: Partial<SyncConfig>): Promise<void> {
+    this.writing++;
+    try { await store.setSyncConfig(patch); } finally {
+      this.writing--;
+      if (this.writing === 0 && this.pendingRender) {
+        const a = document.activeElement as HTMLElement | null;
+        if (a && this.c.contains(a)) { this.pendingRender = true; return; }
+        this.pendingRender = false;
+        this.render();
+      }
+    }
+  }
+
+  private async writeSettings(patch: Partial<UserSettings>): Promise<void> {
+    this.writing++;
+    try { await store.updateSettings(patch); } finally {
+      this.writing--;
+      if (this.writing === 0 && this.pendingRender) {
+        const a = document.activeElement as HTMLElement | null;
+        if (a && this.c.contains(a)) { this.pendingRender = true; return; }
+        this.pendingRender = false;
+        this.render();
+      }
+    }
+  }
+
   render() {
     const s = store.getState(); const user = s.user; const settings = store.getSettings();
     const active = document.activeElement as HTMLInputElement | null;
     const activeId = active && this.c.contains(active) ? active.id : '';
     const selStart = activeId ? active!.selectionStart : null;
+    this.pendingRender = false;
+
     this.c.innerHTML = '';
     const w = document.createElement('div'); w.className = 'settings-wrapper';
     const h = document.createElement('div'); h.className = 'settings-header';
@@ -49,13 +104,7 @@ export class SettingsComponent {
     `));
 
     // Sync section
-    w.appendChild(this.section('Sync', `
-      ${cloud ? '' : '<div class="setting-row"><span class="setting-label">Cloud sync</span><span class="setting-value">not configured</span></div>'}
-      <div class="setting-row"><label class="toggle"><input type="checkbox" id="sync-enabled" ${cloud ? '' : 'disabled'} ${settings.syncEnabled?'checked':''}><span class="toggle-slider"></span></label><span>Cloud Sync</span></div>
-      <div class="setting-row"><label class="toggle"><input type="checkbox" id="icloud-sync" ${settings.iCloudSync?'checked':''}><span class="toggle-slider"></span></label><span>Durable storage <span class="setting-hint">stop the browser evicting data</span></span></div>
-      <div class="setting-row"><span class="setting-label">Status</span><span class="setting-value">${cloud ? s.sync.status : 'offline'}${cloud && s.sync.lastSync?` • Last: ${new Date(s.sync.lastSync).toLocaleTimeString()}`:''}</span></div>
-      <div class="setting-actions">${cloud ? '<button class="btn btn-primary btn-sm" id="sync-now">Sync Now</button>' : ''}<button class="btn btn-ghost btn-sm" id="export">Export</button><button class="btn btn-ghost btn-sm" id="import">Import</button></div>
-    `));
+    w.appendChild(this.section('Sync', this.syncSection(settings, cloud)));
 
     // Appearance section
     w.appendChild(this.section('Appearance', `
@@ -105,6 +154,83 @@ export class SettingsComponent {
     return s;
   }
 
+  /** The Sync section: provider picker, provider-specific fields and status. */
+  private syncSection(settings: UserSettings, cloud: boolean): string {
+    const s = store.getState();
+    const cfg = settings.sync ?? { provider: 'none' as const };
+    const fileName = cfg.fileName || 'habit_ctl.json';
+    const provider = cfg.provider;
+
+    const providerOptions = [
+      { id: 'none', label: 'Off (local only)' },
+      { id: 'file', label: 'Local file (auto-backup)' },
+      { id: 'webdav', label: 'WebDAV (Nextcloud / ownCloud)' },
+      { id: 'appwrite', label: 'Appwrite cloud' },
+    ];
+
+    const providerSelect = `
+      <div class="setting-row">
+        <span class="setting-label">Sync to</span>
+        <select id="sync-provider">
+          ${providerOptions.map(o => `<option value="${o.id}" ${provider === o.id ? 'selected' : ''}>${o.label}</option>`).join('')}
+        </select>
+      </div>`;
+
+    let providerFields = '';
+    if (provider === 'file') {
+      providerFields = `
+        <div class="setting-row">
+          <span class="setting-label">Snapshot file</span>
+          <span class="setting-value">${fileName}</span>
+          <button class="btn btn-ghost btn-sm" id="sync-pick-file">Choose…</button>
+        </div>
+        <div class="setting-note">Writes <code>${fileName}</code> to a folder you pick — iCloud Drive, Google Drive, Dropbox or a NAS mount. ${store.fileSyncSupported() ? 'Updates happen silently in the background.' : 'This browser cannot write files silently — use WebDAV instead.'}</div>`;
+    } else if (provider === 'webdav') {
+      providerFields = `
+        <div class="setting-col"><label class="setting-label" for="dav-url">Server URL</label>
+          <input type="url" id="dav-url" placeholder="https://cloud.example.com/remote.php/dav/files/user" value="${escapeAttr(cfg.webdavUrl || '')}"></div>
+        <div class="setting-row">
+          <div class="setting-col"><label class="setting-label" for="dav-user">Username</label><input type="text" id="dav-user" autocomplete="username" value="${escapeAttr(cfg.webdavUser || '')}"></div>
+          <div class="setting-col"><label class="setting-label" for="dav-pass">App password</label><input type="password" id="dav-pass" autocomplete="current-password" value="${escapeAttr(cfg.webdavPassword || '')}"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-col"><label class="setting-label" for="dav-path">Folder</label><input type="text" id="dav-path" placeholder="Documents" value="${escapeAttr(cfg.webdavPath || '')}"></div>
+          <div class="setting-col"><label class="setting-label" for="dav-file">File name</label><input type="text" id="dav-file" value="${escapeAttr(fileName)}"></div>
+        </div>
+        <div class="setting-note">Use an <strong>app password</strong>, not your account password. Works with Nextcloud, ownCloud, Seafile and Synology DSM.</div>`;
+    } else if (provider === 'appwrite') {
+      providerFields = cloud
+        ? '<div class="setting-note">Syncing through your Appwrite project. Sign in first to enable sync.</div>'
+        : '<div class="setting-note">Appwrite is not configured. Add <code>VITE_APPWRITE_PROJECT_ID</code> to <code>.env</code> and rebuild, or use WebDAV / a local file instead.</div>';
+    } else {
+      providerFields = '<div class="setting-note">Your data stays on this device. Pick a sync target above to back it up or use it on another device.</div>';
+    }
+
+    const autoRows = provider !== 'none' ? `
+      <div class="setting-row"><label class="toggle"><input type="checkbox" id="sync-enabled" ${settings.syncEnabled ? 'checked' : ''}><span class="toggle-slider"></span></label><span>Enable sync</span></div>
+      <div class="setting-row"><label class="toggle"><input type="checkbox" id="sync-auto" ${cfg.autoSync ? 'checked' : ''}><span class="toggle-slider"></span></label><span>Auto sync <span class="setting-hint">every</span></span>
+        <select id="sync-interval">
+          ${[5, 15, 30, 60, 180].map(m => `<option value="${m}" ${(cfg.syncIntervalMin || 15) === m ? 'selected' : ''}>${m} min</option>`).join('')}
+        </select>
+      </div>` : '';
+
+    const status = s.sync.status;
+    const statusLabel = status === 'syncing' ? 'syncing…' : status === 'error' ? (s.sync.error || 'error') : status;
+
+    return `
+      ${providerSelect}
+      ${providerFields}
+      ${autoRows}
+      <div class="setting-row"><label class="toggle"><input type="checkbox" id="icloud-sync" ${settings.iCloudSync ? 'checked' : ''}><span class="toggle-slider"></span></label><span>Durable storage <span class="setting-hint">stop the browser evicting data</span></span></div>
+      <div class="setting-row"><span class="setting-label">Status</span><span class="setting-value" id="sync-state">${escapeAttr(statusLabel)}${s.sync.lastSync ? ` • Last: ${new Date(s.sync.lastSync).toLocaleTimeString()}` : ''}</span></div>
+      <div class="setting-actions">
+        <button class="btn btn-primary btn-sm" id="sync-now" ${provider === 'none' ? 'disabled' : ''}>Sync Now</button>
+        <button class="btn btn-ghost btn-sm" id="sync-test" ${provider === 'none' ? 'disabled' : ''}>Test Connection</button>
+        <button class="btn btn-ghost btn-sm" id="export">Export</button>
+        <button class="btn btn-ghost btn-sm" id="import">Import</button>
+      </div>`;
+  }
+
   private themeGrid(current: string): string {
     const free = getFreeThemes(); const pro = getProThemes();
     const custom = store.getState().themes.filter(t => t.isCustom);
@@ -135,7 +261,52 @@ export class SettingsComponent {
     this.c.querySelector('#signin')?.addEventListener('click', () => this.showAuth('signin'));
     this.c.querySelector('#signup')?.addEventListener('click', () => this.showAuth('signup'));
     this.c.querySelector('#apple')?.addEventListener('click', () => store.signInWithApple().catch(()=>createToast('Apple sign in not configured','error')));
-    this.c.querySelector('#sync-now')?.addEventListener('click', () => store.syncWithCloud());
+    this.c.querySelector('#sync-now')?.addEventListener('click', async () => {
+      const btn = this.c.querySelector('#sync-now') as HTMLButtonElement;
+      const original = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Syncing…';
+      const res = await store.syncNow();
+      btn.textContent = original; btn.disabled = false;
+      createToast(res.message, res.ok ? 'success' : 'error');
+      this.render();
+    });
+    this.c.querySelector('#sync-test')?.addEventListener('click', async () => {
+      const res = await store.testSync();
+      createToast(res.message, res.ok ? 'success' : 'error');
+    });
+    this.c.querySelector('#sync-provider')?.addEventListener('change', async e => {
+      const provider = (e.target as HTMLSelectElement).value as SyncProviderId;
+      await this.write({ provider });
+      this.render(); // the provider changes which fields are shown
+    });
+    this.c.querySelector('#sync-pick-file')?.addEventListener('click', async () => {
+      try {
+        const name = await store.chooseSyncFile();
+        if (name) { createToast(`Snapshot file: ${name}`, 'success'); await this.write({ provider: 'file' }); }
+      } catch (err) { createToast(err instanceof Error ? err.message : String(err), 'error'); }
+      this.render();
+    });
+    const davBind = (id: string, key: 'webdavUrl' | 'webdavUser' | 'webdavPassword' | 'webdavPath' | 'fileName') => {
+      const el = this.c.querySelector(id) as HTMLInputElement | null;
+      if (el) {
+        el.addEventListener('input', e => {
+          const value = (e.target as HTMLInputElement).value;
+          void this.write({ [key]: value } as Partial<SyncConfig>);
+        });
+        el.addEventListener('change', e => {
+          const value = (e.target as HTMLInputElement).value;
+          void this.write({ [key]: value } as Partial<SyncConfig>);
+        });
+      }
+    };
+    davBind('#dav-url', 'webdavUrl');
+    davBind('#dav-user', 'webdavUser');
+    davBind('#dav-pass', 'webdavPassword');
+    davBind('#dav-path', 'webdavPath');
+    davBind('#dav-file', 'fileName');
+    this.c.querySelector('#sync-auto')?.addEventListener('change', e => { void this.write({ autoSync: (e.target as HTMLInputElement).checked }); });
+    this.c.querySelector('#sync-interval')?.addEventListener('change', e => { void this.write({ syncIntervalMin: parseInt((e.target as HTMLSelectElement).value) || 15 }); });
+    this.c.querySelector('#sync-enabled')?.addEventListener('change', e => { void this.writeSettings({ syncEnabled: (e.target as HTMLInputElement).checked }); });
     this.c.querySelector('#export')?.addEventListener('click', async () => {
       const json = await store.exportData();
       try { await navigator.clipboard.writeText(json); } catch { /* clipboard may be blocked */ }
@@ -159,7 +330,6 @@ export class SettingsComponent {
     this.c.querySelectorAll('.theme-delete').forEach(b=>b.addEventListener('click', e=>{ e.stopPropagation(); const id=b.getAttribute('data-del')!; if(confirm('Delete this custom theme?')){ store.deleteCustomTheme(id); createToast('Theme deleted','info'); } }));
     this.c.querySelector('#install')?.addEventListener('click', async () => { const r = await promptInstall(); if (r === 'accepted') createToast('Installing…','success'); else if (r === 'dismissed') createToast('Install dismissed','info'); });
     this.c.querySelector('#notif-perm')?.addEventListener('click', async () => { const ok = await requestNotificationPermission(); createToast(ok?'Notifications enabled':'Notifications blocked','info'); this.render(); });
-    this.c.querySelector('#sync-enabled')?.addEventListener('change', e=>store.updateSettings({syncEnabled:(e.target as HTMLInputElement).checked}));
     this.c.querySelector('#icloud-sync')?.addEventListener('change', async e=>{ const on=(e.target as HTMLInputElement).checked; await store.updateSettings({iCloudSync:on}); if(on){ try{ const persisted = navigator.storage?.persist ? await navigator.storage.persist() : false; createToast(persisted?'Durable storage granted':'Kept data offline (browser may evict)','info'); }catch{ createToast('Could not request durable storage','warning'); } } });
     this.c.querySelector('#animations')?.addEventListener('change', e=>store.updateSettings({animations:(e.target as HTMLInputElement).checked}));
     this.c.querySelector('#matte')?.addEventListener('change', e=>store.updateSettings({matteMode:(e.target as HTMLInputElement).checked}));
@@ -168,7 +338,7 @@ export class SettingsComponent {
     this.c.querySelector('#date-fmt')?.addEventListener('change', e=>store.updateSettings({dateFormat:(e.target as HTMLSelectElement).value as any}));
     this.c.querySelector('#time-fmt')?.addEventListener('change', e=>store.updateSettings({timeFormat:(e.target as HTMLSelectElement).value as any}));
     this.c.querySelector('#sort-by')?.addEventListener('change', e=>store.updateSettings({sortBy:((e.target as HTMLSelectElement).value || undefined) as any}));
-    this.c.querySelector('#custom-css')?.addEventListener('input', e=>store.updateSettings({customCSS:(e.target as HTMLTextAreaElement).value}));
+    this.c.querySelector('#custom-css')?.addEventListener('input', e=>{ void this.writeSettings({customCSS:(e.target as HTMLTextAreaElement).value}); });
     this.c.querySelector('#passcode')?.addEventListener('change', e =>{
       const on = (e.target as HTMLInputElement).checked;
       if (on) {
@@ -194,8 +364,8 @@ export class SettingsComponent {
         void store.updateSettings({ vacationMode: false }).then(() => this.render());
       }
     });
-    this.c.querySelector('#vacation-start')?.addEventListener('change', e=>store.updateSettings({vacationStartsAt:(e.target as HTMLInputElement).value}));
-    this.c.querySelector('#vacation-end')?.addEventListener('change', e=>store.updateSettings({vacationEndsAt:(e.target as HTMLInputElement).value}));
+    this.c.querySelector('#vacation-start')?.addEventListener('change', e=>{ void this.writeSettings({vacationStartsAt:(e.target as HTMLInputElement).value}); });
+    this.c.querySelector('#vacation-end')?.addEventListener('change', e=>{ void this.writeSettings({vacationEndsAt:(e.target as HTMLInputElement).value}); });
   }
 
   private showAuth(mode: 'signin'|'signup') {
@@ -226,3 +396,8 @@ export class SettingsComponent {
 }
 
 export function createSettings(c: HTMLElement) { return new SettingsComponent(c); }
+
+/** Escape a value for safe interpolation into an HTML attribute. */
+function escapeAttr(value: string): string {
+  return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}

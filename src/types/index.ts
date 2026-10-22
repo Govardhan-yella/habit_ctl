@@ -49,6 +49,8 @@ export interface Completion {
   date: string;
   value: number;
   createdAt: string;
+  /** Last time this completion was changed. Used by sync to pick the winning copy. */
+  updatedAt?: string;
   synced: boolean;
 }
 
@@ -156,6 +158,27 @@ export interface Template {
   color: string;
 }
 
+/** Where the app syncs its data to. */
+export type SyncProviderId = 'none' | 'file' | 'webdav' | 'appwrite';
+
+/** Sync configuration. Stored inside UserSettings so it survives offline use. */
+export interface SyncConfig {
+  provider: SyncProviderId;
+  /** WebDAV base URL, e.g. https://cloud.example.com/remote.php/dav/files/user */
+  webdavUrl?: string;
+  webdavUser?: string;
+  /** WebDAV app password (not the account password). */
+  webdavPassword?: string;
+  /** Folder inside the WebDAV root to store the snapshot in. */
+  webdavPath?: string;
+  /** Snapshot file name used by every provider. */
+  fileName?: string;
+  /** Sync automatically on an interval. */
+  autoSync?: boolean;
+  /** Auto-sync interval in minutes. */
+  syncIntervalMin?: number;
+}
+
 export interface UserSettings {
   themeId: string;
   syncEnabled: boolean;
@@ -175,6 +198,8 @@ export interface UserSettings {
   vacationEndsAt?: string;
   customCSS?: string;
   sortBy?: 'alpha' | 'due' | 'streak' | 'progress' | 'created';
+  /** Where and how the app syncs. Absent = no provider configured. */
+  sync?: SyncConfig;
 }
 
 export interface StreakData {
