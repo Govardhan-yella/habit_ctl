@@ -19,6 +19,8 @@ export interface Habit {
   name: string;
   icon: string;
   color: string;
+  /** Optional override for the habit name's text colour. Empty/undefined = inherit from the theme. */
+  textColor?: string;
   mode: HabitMode;
   target: number;
   unit?: string;

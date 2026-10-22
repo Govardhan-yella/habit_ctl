@@ -128,7 +128,7 @@ class AppwriteService {
     return result.documents.map(this.mapHabit);
   }
 
-  mapHabit(doc: any): Habit { return { id: doc.$id, name: doc.name, icon: doc.icon, color: doc.color, mode: doc.mode, target: doc.target, unit: doc.unit, schedule: JSON.parse(doc.schedule), reminders: JSON.parse(doc.reminders), routineId: doc.routineId, createdAt: doc.createdAt, archivedAt: doc.archivedAt, updatedAt: doc.updatedAt, order: doc.order }; }
+  mapHabit(doc: any): Habit { return { id: doc.$id, name: doc.name, icon: doc.icon, color: doc.color, textColor: doc.textColor || undefined, mode: doc.mode, target: doc.target, unit: doc.unit, schedule: JSON.parse(doc.schedule), reminders: JSON.parse(doc.reminders), routineId: doc.routineId, createdAt: doc.createdAt, archivedAt: doc.archivedAt, updatedAt: doc.updatedAt, order: doc.order }; }
 
   async createCompletion(completion: Omit<Completion, 'id' | 'createdAt' | 'synced'>): Promise<Completion> {
     const user = await this.getCurrentUser(); const now = new Date().toISOString(); const { ID } = await import('appwrite');

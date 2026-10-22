@@ -159,6 +159,17 @@ export function openHabitForm(habit?: Habit): void {
         <div class="color-swatches">${COLOR_SWATCHES.map(c => `<button type="button" class="color-swatch" data-color="${c}" style="background:${c}"></button>`).join('')}</div>
       </div>
     </div>
+    <div class="form-group">
+      <label>Text colour</label>
+      <div class="color-row">
+        <label class="toggle-inline" title="Use the theme's text colour for the habit name">
+          <input type="checkbox" id="h-textcolor-on" ${habit?.textColor ? 'checked' : ''}> Custom
+        </label>
+        <input type="color" id="h-textcolor" value="${habit?.textColor ?? '#e6e6e6'}" ${habit?.textColor ? '' : 'disabled'}>
+        <div class="color-swatches" id="h-textcolor-swatches" ${habit?.textColor ? '' : 'style="display:none"'}>${COLOR_SWATCHES.map(c => `<button type="button" class="color-swatch" data-textcolor="${c}" style="background:${c}"></button>`).join('')}</div>
+      </div>
+      <span class="setting-hint">Applies to the habit name only. Leave off to inherit the theme text colour.</span>
+    </div>
     <div class="form-group"><label>Mode</label><select id="h-mode">${modeOpts.map(m => `<option value="${m}" ${habit?.mode === m ? 'selected' : ''}>${m[0].toUpperCase()}${m.slice(1)}</option>`).join('')}</select></div>
     <div class="form-group" id="target-group" style="display:${habit && habit.mode !== 'checkbox' ? 'block' : 'none'}"><label>Target</label><input type="number" id="h-target" value="${habit?.target ?? 1}" min="1"></div>
     <div class="form-group" id="unit-group" style="display:${habit && habit.mode !== 'checkbox' ? 'block' : 'none'}"><label>Unit (optional)</label><input type="text" id="h-unit" placeholder="km, pages, min" value="${habit?.unit ?? ''}"></div>
@@ -306,17 +317,41 @@ export function openHabitForm(habit?: Habit): void {
   });
 
   function syncColorActive(): void {
-    content.querySelectorAll('.color-swatch').forEach(s => {
+    content.querySelectorAll('.color-swatch[data-color]').forEach(s => {
       s.classList.toggle('active', s.getAttribute('data-color')?.toLowerCase() === colorInput.value.toLowerCase());
     });
   }
-  content.querySelectorAll('.color-swatch').forEach(btn => btn.addEventListener('click', () => {
+  content.querySelectorAll('.color-swatch[data-color]').forEach(btn => btn.addEventListener('click', () => {
     colorInput.value = btn.getAttribute('data-color')!;
     syncColorActive();
     applyLogoColor();
   }));
   colorInput.addEventListener('input', () => { syncColorActive(); applyLogoColor(); });
   syncColorActive();
+
+  // ---- Text colour (optional override for the habit name) ----
+  const textColorInput = content.querySelector('#h-textcolor') as HTMLInputElement;
+  const textColorToggle = content.querySelector('#h-textcolor-on') as HTMLInputElement;
+  const textSwatches = content.querySelector('#h-textcolor-swatches') as HTMLElement;
+
+  function syncTextColorState(): void {
+    const on = textColorToggle.checked;
+    textColorInput.disabled = !on;
+    textSwatches.style.display = on ? 'flex' : 'none';
+    syncTextColorActive();
+  }
+  function syncTextColorActive(): void {
+    textSwatches.querySelectorAll('.color-swatch[data-textcolor]').forEach(s => {
+      s.classList.toggle('active', s.getAttribute('data-textcolor')?.toLowerCase() === textColorInput.value.toLowerCase());
+    });
+  }
+  textColorToggle.addEventListener('change', syncTextColorState);
+  textColorInput.addEventListener('input', syncTextColorActive);
+  textSwatches.querySelectorAll('.color-swatch[data-textcolor]').forEach(btn => btn.addEventListener('click', () => {
+    textColorInput.value = btn.getAttribute('data-textcolor')!;
+    syncTextColorActive();
+  }));
+  syncTextColorState();
 
   // Restore initial icon
   if (initialIcon) {
@@ -349,6 +384,9 @@ export function openHabitForm(habit?: Habit): void {
     (content.querySelector('#h-color') as HTMLInputElement).value = t.color;
     syncColorActive();
     applyLogoColor();
+    // templates carry no text colour, so fall back to the theme default
+    textColorToggle.checked = false;
+    syncTextColorState();
     (content.querySelector('#h-mode') as HTMLSelectElement).value = t.mode;
     (content.querySelector('#h-target') as HTMLInputElement).value = String(t.target);
     (content.querySelector('#h-unit') as HTMLInputElement).value = t.unit || '';
@@ -386,9 +424,10 @@ export function openHabitForm(habit?: Habit): void {
     if (st === 'custom') schedule.days = Array.from(content.querySelectorAll('#custom-days input:checked')).map(cb => parseInt((cb as HTMLInputElement).value));
     const icon = currentLogo() || '✦';
     const color = (content.querySelector('#h-color') as HTMLInputElement).value;
+    const textColor = textColorToggle.checked ? textColorInput.value : undefined;
     const target = parseInt((content.querySelector('#h-target') as HTMLInputElement).value) || 1;
     const unit = (content.querySelector('#h-unit') as HTMLInputElement).value || undefined;
-    return { name, mode, schedule, icon, color, target, unit };
+    return { name, mode, schedule, icon, color, textColor, target, unit };
   }
 
   content.querySelector('#h-save-tpl')?.addEventListener('click', () => {

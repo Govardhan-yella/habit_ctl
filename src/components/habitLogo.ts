@@ -64,6 +64,14 @@ export function habitLogoText(habit: Pick<Habit, 'icon' | 'mode'>): string {
 }
 
 /**
+ * Inline style for a habit's text colour override. Empty when the habit
+ * inherits the theme's text colour.
+ */
+export function habitTextStyle(habit: Pick<Habit, 'textColor'>): string {
+  return habit.textColor ? ` style="color:${habit.textColor}"` : '';
+}
+
+/**
  * Render a habit logo to HTML. Falls back to the mode glyph when the stored
  * logo is missing or unrecognised.
  */

@@ -3,7 +3,7 @@ import { Habit, Completion, HabitMode } from '../types';
 import { getTodayString, formatDateString } from '../utils/date';
 import { createProgressBar, createEmptyState, createToast } from './TerminalUI';
 import { openHabitForm } from './HabitForm';
-import { renderHabitLogo } from './habitLogo';
+import { renderHabitLogo, habitTextStyle } from './habitLogo';
 
 function fmtMMSS(totalSec: number): string {
   const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
@@ -116,7 +116,7 @@ export class HabitListComponent {
     const routineBadge = routine ? `<span class="habit-routine-badge" style="color:${routine.color};border-color:${routine.color}">${routine.icon} ${routine.name}</span>` : '';
     const showProgress = h.mode !== 'checkbox' && h.mode !== 'timer' && h.mode !== 'health';
     const logo = renderHabitLogo(h, 18);
-    el.innerHTML = `<div class="habit-main"><div class="habit-indicator"><span class="habit-mode-icon" style="color:${h.color}">${logo}</span>${shields > 0 ? `<span class="habit-shield-badge">${shields}🛡</span>` : ''}</div><div class="habit-info"><div class="habit-header"><span class="habit-name">${h.name}</span><span class="habit-mode-badge">${labels[h.mode]}</span>${routineBadge}${offDayNote}</div><div class="habit-meta"><span class="habit-streak">🔥 ${streak.current}${streak.isActive ? '' : ' (idle)'}</span><span class="habit-target">${this.getTarget(h, c)}</span></div>${showProgress ? `<div class="habit-progress">${createProgressBar(progress, 100, h.color).outerHTML}</div>` : ''}</div><div class="habit-actions">${this.getActions(h, done, c, date, canLog, archived)}</div></div>${isSelected ? this.getDetail(h, cs, streak, shields) : ''}`;
+    el.innerHTML = `<div class="habit-main"><div class="habit-indicator"><span class="habit-mode-icon" style="color:${h.color}">${logo}</span>${shields > 0 ? `<span class="habit-shield-badge">${shields}🛡</span>` : ''}</div><div class="habit-info"><div class="habit-header"><span class="habit-name"${habitTextStyle(h)}>${h.name}</span><span class="habit-mode-badge">${labels[h.mode]}</span>${routineBadge}${offDayNote}</div><div class="habit-meta"><span class="habit-streak">🔥 ${streak.current}${streak.isActive ? '' : ' (idle)'}</span><span class="habit-target">${this.getTarget(h, c)}</span></div>${showProgress ? `<div class="habit-progress">${createProgressBar(progress, 100, h.color).outerHTML}</div>` : ''}</div><div class="habit-actions">${this.getActions(h, done, c, date, canLog, archived)}</div></div>${isSelected ? this.getDetail(h, cs, streak, shields) : ''}`;
 
     el.querySelector('.habit-main')?.addEventListener('click', e => { if (!(e.target as HTMLElement).closest('.habit-actions')) { this.selectedId = isSelected ? null : h.id; this.render(); } });
     this.wireActions(el, h, done, date, canLog, archived);

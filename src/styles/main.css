@@ -2199,6 +2199,25 @@ input[type='color'] {
   opacity: 0.75;
   margin-left: 0.35rem;
 }
+/* Block variant used under form rows (e.g. habit text colour) */
+.form-group > .setting-hint {
+  display: block;
+  margin: 0.3rem 0 0;
+  line-height: 1.4;
+}
+/* Inline checkbox toggle beside a colour picker */
+.toggle-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-inline:hover { color: var(--fg); }
+.toggle-inline input[type="checkbox"] { margin: 0; accent-color: var(--accent); }
+.color-row input[type="color"]:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .setting-row > .setting-label:first-child:not(:only-child) {
   flex: 1;

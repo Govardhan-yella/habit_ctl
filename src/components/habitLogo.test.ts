@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { logoKind, tablerName, nerdChar, tablerSvg, habitLogoText, renderHabitLogo, MODE_ICONS } from '../components/habitLogo';
+import { logoKind, tablerName, nerdChar, tablerSvg, habitLogoText, renderHabitLogo, habitTextStyle, MODE_ICONS } from '../components/habitLogo';
 
 describe('logoKind', () => {
   it('detects each logo type from its tag', () => {
@@ -32,6 +32,17 @@ describe('tablerSvg', () => {
 
   it('returns an empty string for an unknown icon', () => {
     expect(tablerSvg('definitely-not-an-icon')).toBe('');
+  });
+});
+
+describe('habitTextStyle', () => {
+  it('returns an empty string when there is no override', () => {
+    expect(habitTextStyle({ textColor: undefined })).toBe('');
+    expect(habitTextStyle({ textColor: '' })).toBe('');
+  });
+
+  it('returns an inline colour style when overridden', () => {
+    expect(habitTextStyle({ textColor: '#f7768e' })).toBe(' style="color:#f7768e"');
   });
 });
 

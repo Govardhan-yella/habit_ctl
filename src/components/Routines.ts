@@ -2,6 +2,7 @@ import { store } from '../stores/appStore';
 import { Routine, Habit } from '../types';
 import { getTodayString } from '../utils/date';
 import { createTerminalBlock, createEmptyState, createProgressBar } from './TerminalUI';
+import { habitTextStyle } from './habitLogo';
 
 export class RoutinesComponent {
   private c: HTMLElement; private u: () => void;
@@ -31,7 +32,7 @@ export class RoutinesComponent {
     el.querySelector('.btn-del')?.addEventListener('click', e=>{e.stopPropagation();if(confirm(`Delete "${r.name}"?`))store.deleteRoutine(r.id);});
     return el;
   }
-  private habitEl(h: Habit, today: string): string { const cs = store.getState().completions; const c = cs.find(x=>x.habitId===h.id&&x.date===today); const d = h.mode==='checkbox'?!!c:c&&c.value>=h.target; const icons={checkbox:'☐',counter:'⊞',number:'⌗',timer:'⏱',health:'♥'}; return `<div class="routine-habit ${d?'done':''}"><span style="color:${h.color}">${icons[h.mode]}</span><span>${h.name}</span><span>${d?'✓':'○'}</span></div>`; }
+  private habitEl(h: Habit, today: string): string { const cs = store.getState().completions; const c = cs.find(x=>x.habitId===h.id&&x.date===today); const d = h.mode==='checkbox'?!!c:c&&c.value>=h.target; const icons={checkbox:'☐',counter:'⊞',number:'⌗',timer:'⏱',health:'♥'}; return `<div class="routine-habit ${d?'done':''}"><span style="color:${h.color}">${icons[h.mode]}</span><span${habitTextStyle(h)}>${h.name}</span><span>${d?'✓':'○'}</span></div>`; }
   private sched(s: any): string { switch(s.type){case'daily':return'Daily';case'weekdays':return'Mon-Fri';case'custom':return['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].filter((_,i)=>s.days?.includes(i)).join(', ');default:return'Custom';}}
   private showForm(r?: Routine) { window.dispatchEvent(new CustomEvent('show-routine-form',{detail:r})); }
 }
