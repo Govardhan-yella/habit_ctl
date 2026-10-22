@@ -9,6 +9,7 @@ import { createWidgetRail } from './Widgets';
 import { openHabitForm } from './HabitForm';
 import { createAppearancePicker } from './appearancePicker';
 import { formatDate } from '../utils/date';
+import { openCommandPalette } from './CommandPalette';
 
 export class App {
   private root: HTMLElement;
@@ -120,6 +121,7 @@ export class App {
     
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { document.querySelector('.modal-overlay')?.remove(); return; }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openCommandPalette(); return; }
       const t = e.target as HTMLElement;
       if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || t.isContentEditable) return;
       if ((e.key === ' ' || e.key === 'Enter') && t instanceof HTMLButtonElement) return;

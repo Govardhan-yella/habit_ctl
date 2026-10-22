@@ -6,6 +6,8 @@ import { saveHabit, getAllHabits, deleteHabit, saveCompletion, getCompletionsByH
 import { appwrite } from '../services/appwrite';
 import { createProvider, snapshotFromState, mergeSnapshots, saveTombstones, addTombstone, MergeStats } from '../services/sync';
 import { FileProvider, supportsFileSystemAccess } from '../services/sync/file';
+import { playSound } from '../services/audio';
+import { showCelebration } from '../components/Celebration';
 
 type Listener = (state: AppState) => void;
 
@@ -294,9 +296,67 @@ class AppStore {
 
   async toggleHabitArchive(id: string): Promise<void> { const h = this.state.habits.find(x => x.id === id); if (!h) return; await this.updateHabit({ ...h, archivedAt: h.archivedAt ? undefined : new Date().toISOString() }); }
 
-  async completeHabit(habitId: string, date: string = getTodayString(), value: number = 1): Promise<void> { const h = this.state.habits.find(x => x.id === habitId); if (!h) return; const existing = this.state.completions.find(c => c.habitId === habitId && c.date === date); let c: Completion; const now = new Date().toISOString(); if (existing) { const nv = h.mode === 'checkbox' ? 1 : existing.value + value; c = { ...existing, value: nv, synced: false, updatedAt: now }; } else { c = { id: crypto.randomUUID(), habitId, date, value: h.mode === 'checkbox' ? 1 : value, createdAt: now, updatedAt: now, synced: false }; } await saveCompletion(c); this.setState({ completions: this.state.completions.map(x => x.id === c.id ? c : x).concat(existing ? [] : [c]) }); if (h.mode !== 'checkbox') { const st = this.getHabitStreak(habitId); const ns = Math.floor(st.current / 7) - st.shields; if (ns > 0) for (let i = 0; i < ns; i++) { const s: Shield = { id: crypto.randomUUID(), habitId, earnedAt: new Date().toISOString(), source: 'streak' }; await saveShield(s); this.setState({ shields: [...this.state.shields, s] }); } } if (this.state.user?.settings.syncEnabled && appwrite.isOnline()) try { await appwrite.createCompletion(c); } catch { await addPendingChange('completion', existing ? 'update' : 'create', c); } }
+  async completeHabit(habitId: string, date: string = getTodayString(), value: number = 1): Promise<void> {
+    const h = this.state.habits.find(x => x.id === habitId);
+    if (!h) return;
+    const existing = this.state.completions.find(c => c.habitId === habitId && c.date === date);
+    let c: Completion;
+    const now = new Date().toISOString();
+    if (existing) {
+      const nv = h.mode === 'checkbox' ? 1 : existing.value + value;
+      c = { ...existing, value: nv, synced: false, updatedAt: now };
+    } else {
+      c = { id: crypto.randomUUID(), habitId, date, value: h.mode === 'checkbox' ? 1 : value, createdAt: now, updatedAt: now, synced: false };
+    }
+    await saveCompletion(c);
+    this.setState({ completions: this.state.completions.map(x => x.id === c.id ? c : x).concat(existing ? [] : [c]) });
+    
+    // Delight: sounds + celebrations
+    try { playSound(existing ? 'click' : 'complete'); } catch {}
+    
+    if (!existing) {
+      const st = this.getHabitStreak(habitId);
+      if (st.current > 0 && st.current % 7 === 0) {
+        try { playSound('streak'); showCelebration({ title: `${st.current}-day streak!`, message: `You're on fire with ${h.name}. Keep it going!`, icon: '🔥', confetti: true }); } catch {}
+      }
+      if (st.current === 30) {
+        try { playSound('levelup'); showCelebration({ title: 'Level Up!', message: '30-day streak — legendary consistency.', icon: '⚡', confetti: true }); } catch {}
+      }
+      // perfect day?
+      const tp = this.todayProgress();
+      if (date === getTodayString() && tp.total > 0 && tp.done + 1 >= tp.total) {
+        try { playSound('perfect'); showCelebration({ title: 'Perfect Day!', message: 'Every scheduled habit completed today.', icon: '🌟', confetti: true }); } catch {}
+      }
+    }
+    
+    if (h.mode !== 'checkbox') {
+      const st = this.getHabitStreak(habitId);
+      const ns = Math.floor(st.current / 7) - st.shields;
+      if (ns > 0) for (let i = 0; i < ns; i++) {
+        const s: Shield = { id: crypto.randomUUID(), habitId, earnedAt: new Date().toISOString(), source: 'streak' };
+        await saveShield(s);
+        this.setState({ shields: [...this.state.shields, s] });
+        try { playSound('shield'); } catch {}
+      }
+    }
+    if (this.state.user?.settings.syncEnabled && appwrite.isOnline()) try { await appwrite.createCompletion(c); } catch { await addPendingChange('completion', existing ? 'update' : 'create', c); }
+  }
 
-  async uncompleteHabit(habitId: string, date: string = getTodayString()): Promise<void> { const c = this.state.completions.find(x => x.habitId === habitId && x.date === date); if (!c) return; if (c.value > 1) { const u = { ...c, value: c.value - 1, synced: false, updatedAt: new Date().toISOString() }; await saveCompletion(u); this.setState({ completions: this.state.completions.map(x => x.id === c.id ? u : x) }); } else { await deleteCompletion(c.id); addTombstone('completion', `${habitId}|${date}`); this.setState({ completions: this.state.completions.filter(x => x.id !== c.id) }); } if (this.state.user?.settings.syncEnabled && appwrite.isOnline()) try { if (c.value > 1) await appwrite.updateCompletion({ ...c, value: c.value - 1 }); else await appwrite.deleteCompletion(c.id); } catch { await addPendingChange('completion', c.value > 1 ? 'update' : 'delete', c); } }
+  async uncompleteHabit(habitId: string, date: string = getTodayString()): Promise<void> {
+    const c = this.state.completions.find(x => x.habitId === habitId && x.date === date);
+    if (!c) return;
+    try { playSound('undo'); } catch {}
+    if (c.value > 1) {
+      const u = { ...c, value: c.value - 1, synced: false, updatedAt: new Date().toISOString() };
+      await saveCompletion(u);
+      this.setState({ completions: this.state.completions.map(x => x.id === c.id ? u : x) });
+    } else {
+      await deleteCompletion(c.id);
+      addTombstone('completion', `${habitId}|${date}`);
+      this.setState({ completions: this.state.completions.filter(x => x.id !== c.id) });
+    }
+    if (this.state.user?.settings.syncEnabled && appwrite.isOnline()) try { if (c.value > 1) await appwrite.updateCompletion({ ...c, value: c.value - 1 }); else await appwrite.deleteCompletion(c.id); } catch { await addPendingChange('completion', c.value > 1 ? 'update' : 'delete', c); }
+  }
 
   async useShield(habitId: string, shieldId: string, date: string): Promise<void> { const s = this.state.shields.find(x => x.id === shieldId); if (!s || s.usedAt) return; const us = { ...s, usedAt: new Date().toISOString() }; await saveShield(us); this.setState({ shields: this.state.shields.map(x => x.id === shieldId ? us : x) }); const c: Completion = { id: crypto.randomUUID(), habitId, date, value: 1, createdAt: new Date().toISOString(), synced: false }; await saveCompletion(c); this.setState({ completions: [...this.state.completions, c] }); }
 
