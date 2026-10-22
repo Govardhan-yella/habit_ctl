@@ -36,6 +36,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@tabler/icons": "^3.49.0",
     "appwrite": "^14.0.0",
     "idb": "^8.0.0"
   },

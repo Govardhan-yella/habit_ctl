@@ -2611,6 +2611,26 @@ body.no-animations *::after {
 .color-swatch:hover { transform: scale(1.12); }
 .color-swatch.active { border-color: var(--fg); box-shadow: 0 0 0 2px var(--bg); }
 
+/* Habit logo picker: tabbed source (Icons / Emoji / Dev / Upload) */
+.logo-tabs { display: flex; gap: 0.2rem; margin-top: 0.5rem; border-bottom: 1px solid var(--border); }
+.logo-tab { font: inherit; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.35rem 0.6rem; background: none; color: var(--fg-muted); border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: color 0.12s ease, border-color 0.12s ease; }
+.logo-tab:hover { color: var(--fg); }
+.logo-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.logo-upload-panel { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; padding: 0.6rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; }
+.icon-empty { font-size: 0.68rem; color: var(--fg-muted); padding: 0.6rem; background: var(--bg-secondary); border: 1px dashed var(--border); border-radius: 8px; }
+
+/* Tabler SVG icon buttons */
+.icon-pick-svg { display: grid; place-items: center; padding: 0.32rem 0; color: var(--fg-muted); }
+.icon-pick-svg:hover { color: var(--accent); }
+.icon-pick-svg svg { display: block; }
+.icon-pick-svg.active { color: var(--accent); }
+
+/* Nerd Font glyph buttons */
+.icon-pick-nerd { font-family: "Symbols Nerd Font", "JetBrainsMono Nerd Font", "Hack Nerd Font", "FiraCode Nerd Font", var(--font-mono); font-size: 1.05rem; }
+.logo-nerd { font-family: "Symbols Nerd Font", "JetBrainsMono Nerd Font", "Hack Nerd Font", "FiraCode Nerd Font", var(--font-mono); line-height: 1; }
+.habit-logo-nerd { font-family: "Symbols Nerd Font", "JetBrainsMono Nerd Font", "Hack Nerd Font", "FiraCode Nerd Font", var(--font-mono); line-height: 1; }
+.habit-mode-icon svg { display: block; }
+
 /* ---- Customization: form footer --------------------------- */
 .form-spacer { flex: 1; }
 

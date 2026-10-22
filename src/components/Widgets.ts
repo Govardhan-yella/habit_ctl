@@ -1,6 +1,7 @@
 import { store } from '../stores/appStore';
 import { getTodayString, getDateString, addDays } from '../utils/date';
 import { createToast, createModal } from './TerminalUI';
+import { renderHabitLogo, habitLogoText } from './habitLogo';
 
 const DAYS_BACK = 30;
 
@@ -578,7 +579,7 @@ export class WidgetRail {
       <div class="streak-board sb-${size}">
         ${items.map(({ h, st, doneToday }) => `
           <div class="sb-row">
-            <span class="sb-name"><span class="sb-dot" style="background:${h.color}"></span>${h.icon} ${h.name}</span>
+            <span class="sb-name"><span class="sb-dot" style="background:${h.color}"></span>${renderHabitLogo(h, 14)} ${h.name}</span>
             <span class="sb-vals">
               ${st.current > 0 && !doneToday && !vacation && !store.isSkipped(h.id, today) ? '<span class="sb-risk" title="At risk — not done today">at risk</span>' : ''}
               <span class="sb-cur">🔥${st.current}</span>
@@ -801,7 +802,7 @@ export class WidgetRail {
     el.innerHTML = `
       <span class="widget-title">Batch <span class="widget-sub">${this.batchSel.size} selected</span></span>
       <div class="batch-list">
-        ${due.map(h => `<label class="batch-row"><input type="checkbox" data-batch="${h.id}" ${this.batchSel.has(h.id) ? 'checked' : ''}><span style="color:${h.color}">${h.icon}</span> ${h.name}</label>`).join('')}
+        ${due.map(h => `<label class="batch-row"><input type="checkbox" data-batch="${h.id}" ${this.batchSel.has(h.id) ? 'checked' : ''}><span style="color:${h.color}">${renderHabitLogo(h, 14)}</span> ${h.name}</label>`).join('')}
       </div>
       <div class="batch-actions">
         <button class="btn btn-sm btn-primary" data-act="batch-complete" ${this.batchSel.size ? '' : 'disabled'}>Complete</button>
@@ -842,7 +843,7 @@ export class WidgetRail {
         <input type="text" id="capture-input" placeholder="Note…" maxlength="140">
         ${size === 'sm' ? '' : `<select id="capture-select">
           <option value="">Habit (optional)</option>
-          ${habits.map(h => `<option value="${h.id}">${h.icon} ${h.name}</option>`).join('')}
+          ${habits.map(h => `<option value="${h.id}">${habitLogoText(h)} ${h.name}</option>`).join('')}
         </select>`}
         <button class="btn btn-sm btn-primary" data-act="note-add">Add</button>
       </div>

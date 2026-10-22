@@ -2,6 +2,7 @@ import { store } from '../stores/appStore';
 import { Habit, Reminder } from '../types';
 import { getTodayString } from '../utils/date';
 import { createToast } from '../components/TerminalUI';
+import { habitLogoText } from '../components/habitLogo';
 
 const CHECK_INTERVAL_MS = 20_000;
 const MAX_FIRED_MEMORY = 500;
@@ -47,7 +48,7 @@ function notify(habit: Habit, r: Reminder): void {
   const body = habit.mode === 'checkbox'
     ? 'Time to check in'
     : `Target: ${habit.target}${habit.unit ? ' ' + habit.unit : ''}`;
-  const title = `${habit.icon} ${habit.name}`;
+  const title = `${habitLogoText(habit)} ${habit.name}`.replace(/\s+/g, ' ').trim();
   if (notificationsSupported() && Notification.permission === 'granted') {
     try {
       new Notification(title, { body, tag: `habit-${habit.id}-${r.id}` });
