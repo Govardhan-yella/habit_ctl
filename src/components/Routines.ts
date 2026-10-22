@@ -2,7 +2,7 @@ import { store } from '../stores/appStore';
 import { Routine, Habit } from '../types';
 import { getTodayString } from '../utils/date';
 import { createTerminalBlock, createEmptyState, createProgressBar } from './TerminalUI';
-import { habitTextStyle } from './habitLogo';
+import { habitTextStyle, renderRoutineLogo } from './appearance';
 
 export class RoutinesComponent {
   private c: HTMLElement; private u: () => void;
@@ -27,7 +27,7 @@ export class RoutinesComponent {
     let done = 0; rh.forEach(h => { const c = cs.find(x => x.habitId===h.id && x.date===today); if (h.mode==='checkbox'?!!c:c&&c.value>=h.target) done++; });
     const total = rh.length; const pct = total?done/total*100:0; const complete = done===total&&total>0;
     const el = document.createElement('div'); el.className = `routine-item ${complete?'complete':''}`; el.dataset.rid = r.id;
-    el.innerHTML = `<div class="routine-header"><div class="routine-indicator" style="background:${r.color}"></div><div class="routine-info"><div class="routine-name-row"><span class="routine-icon">${r.icon}</span><span class="routine-name">${r.name}</span><span class="routine-schedule">${this.sched(r.schedule)}</span></div><div class="routine-progress">${createProgressBar(pct, 100, r.color).outerHTML}<span class="routine-count">${done}/${total}</span></div></div><div class="routine-actions"><button class="btn btn-ghost btn-sm btn-edit" data-id="${r.id}">Edit</button><button class="btn btn-ghost btn-sm btn-del" data-id="${r.id}">Delete</button></div></div><div class="routine-habits">${rh.map(h=>this.habitEl(h,today)).join('')}</div>`;
+    el.innerHTML = `<div class="routine-header"><div class="routine-indicator" style="background:${r.color}"></div><div class="routine-info"><div class="routine-name-row"><span class="routine-icon">${renderRoutineLogo(r)}</span><span class="routine-name"${habitTextStyle(r)}>${r.name}</span><span class="routine-schedule">${this.sched(r.schedule)}</span></div><div class="routine-progress">${createProgressBar(pct, 100, r.color).outerHTML}<span class="routine-count">${done}/${total}</span></div></div><div class="routine-actions"><button class="btn btn-ghost btn-sm btn-edit" data-id="${r.id}">Edit</button><button class="btn btn-ghost btn-sm btn-del" data-id="${r.id}">Delete</button></div></div><div class="routine-habits">${rh.map(h=>this.habitEl(h,today)).join('')}</div>`;
     el.querySelector('.btn-edit')?.addEventListener('click', e=>{e.stopPropagation();this.showForm(r);});
     el.querySelector('.btn-del')?.addEventListener('click', e=>{e.stopPropagation();if(confirm(`Delete "${r.name}"?`))store.deleteRoutine(r.id);});
     return el;

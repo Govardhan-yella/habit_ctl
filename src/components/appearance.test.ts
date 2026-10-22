@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { logoKind, tablerName, nerdChar, tablerSvg, habitLogoText, renderHabitLogo, habitTextStyle, MODE_ICONS } from '../components/habitLogo';
+import {
+  logoKind, tablerName, nerdChar, tablerSvg, habitLogoText,
+  renderHabitLogo, renderRoutineLogo, habitTextStyle,
+  resolveTextColor, textColorMode, MODE_ICONS,
+} from './appearance';
 
 describe('logoKind', () => {
   it('detects each logo type from its tag', () => {
@@ -35,14 +39,55 @@ describe('tablerSvg', () => {
   });
 });
 
+describe('textColorMode', () => {
+  it('defaults to default when nothing is set', () => {
+    expect(textColorMode({})).toBe('default');
+    expect(textColorMode({ textColor: '' })).toBe('default');
+  });
+
+  it('treats a legacy textColor alone as custom', () => {
+    expect(textColorMode({ textColor: '#ff0000' })).toBe('custom');
+  });
+
+  it('honours an explicit mode', () => {
+    expect(textColorMode({ textColorMode: 'auto' })).toBe('auto');
+    expect(textColorMode({ textColorMode: 'default', textColor: '#ff0000' })).toBe('default');
+    expect(textColorMode({ textColorMode: 'custom' })).toBe('custom');
+  });
+});
+
+describe('resolveTextColor', () => {
+  it('returns undefined in default mode so the theme colour wins', () => {
+    expect(resolveTextColor({ color: '#7aa2f7' })).toBeUndefined();
+    expect(resolveTextColor({ color: '#7aa2f7', textColorMode: 'default' })).toBeUndefined();
+  });
+
+  it('derives the colour from the accent in auto mode', () => {
+    expect(resolveTextColor({ color: '#f7768e', textColorMode: 'auto' })).toBe('#f7768e');
+  });
+
+  it('uses the explicit colour in custom mode', () => {
+    expect(resolveTextColor({ color: '#f7768e', textColor: '#00ff00', textColorMode: 'custom' })).toBe('#00ff00');
+  });
+
+  it('falls back to undefined when custom mode has no colour', () => {
+    expect(resolveTextColor({ color: '#f7768e', textColorMode: 'custom' })).toBeUndefined();
+  });
+});
+
 describe('habitTextStyle', () => {
   it('returns an empty string when there is no override', () => {
-    expect(habitTextStyle({ textColor: undefined })).toBe('');
-    expect(habitTextStyle({ textColor: '' })).toBe('');
+    expect(habitTextStyle({ color: '#7aa2f7', textColor: undefined })).toBe('');
+    expect(habitTextStyle({ color: '#7aa2f7', textColor: '' })).toBe('');
+    expect(habitTextStyle({ color: '#7aa2f7', textColorMode: 'default' })).toBe('');
   });
 
   it('returns an inline colour style when overridden', () => {
-    expect(habitTextStyle({ textColor: '#f7768e' })).toBe(' style="color:#f7768e"');
+    expect(habitTextStyle({ color: '#7aa2f7', textColor: '#f7768e' })).toBe(' style="color:#f7768e"');
+  });
+
+  it('returns the accent colour in auto mode', () => {
+    expect(habitTextStyle({ color: '#f7768e', textColorMode: 'auto' })).toBe(' style="color:#f7768e"');
   });
 });
 
@@ -76,6 +121,31 @@ describe('renderHabitLogo', () => {
 
   it('renders legacy emoji as-is', () => {
     expect(renderHabitLogo({ ...base, icon: '🏃' })).toBe('🏃');
+  });
+});
+
+describe('renderRoutineLogo', () => {
+  it('falls back to a neutral bullet when there is no logo', () => {
+    expect(renderRoutineLogo({})).toBe('◈');
+    expect(renderRoutineLogo({ icon: '' })).toBe('◈');
+  });
+
+  it('renders a tabler icon as inline svg', () => {
+    const html = renderRoutineLogo({ icon: 'tabler:target' });
+    expect(html).toContain('<svg');
+    expect(html).not.toContain('tabler:target');
+  });
+
+  it('falls back to the bullet for an unknown tabler name', () => {
+    expect(renderRoutineLogo({ icon: 'tabler:nope' })).toBe('◈');
+  });
+
+  it('renders an uploaded image as an img tag', () => {
+    expect(renderRoutineLogo({ icon: 'data:image/png;base64,AAA' })).toContain('habit-logo-img');
+  });
+
+  it('renders legacy emoji as-is', () => {
+    expect(renderRoutineLogo({ icon: '☀' })).toBe('☀');
   });
 });
 

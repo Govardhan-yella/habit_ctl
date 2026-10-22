@@ -3,7 +3,7 @@ import { Habit, Completion, HabitMode } from '../types';
 import { getTodayString, formatDateString } from '../utils/date';
 import { createProgressBar, createEmptyState, createToast } from './TerminalUI';
 import { openHabitForm } from './HabitForm';
-import { renderHabitLogo, habitTextStyle } from './habitLogo';
+import { renderHabitLogo, habitTextStyle } from './appearance';
 
 function fmtMMSS(totalSec: number): string {
   const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');

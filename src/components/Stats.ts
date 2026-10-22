@@ -3,7 +3,7 @@ import { Habit, Completion } from '../types';
 import { getTodayString, getDateString, addDays, subDays, getWeekStart, getWeekEnd, getMonthStart, getMonthEnd } from '../utils/date';
 import { computeAchievements, isUnlocked } from '../data/achievements';
 import { createTerminalBlock, createProgressBar, createEmptyState } from './TerminalUI';
-import { habitTextStyle } from './habitLogo';
+import { habitTextStyle } from './appearance';
 
 export class StatsComponent {
   private c: HTMLElement; private u: () => void; private period: 'week'|'month'|'year'|'all' = 'week';

@@ -2,7 +2,7 @@ import { store } from '../stores/appStore';
 import { Habit, Reminder } from '../types';
 import { getTodayString } from '../utils/date';
 import { createToast } from '../components/TerminalUI';
-import { habitLogoText } from '../components/habitLogo';
+import { habitLogoText } from '../components/appearance';
 
 const CHECK_INTERVAL_MS = 20_000;
 const MAX_FIRED_MEMORY = 500;

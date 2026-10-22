@@ -1,7 +1,7 @@
 import { store } from '../stores/appStore';
 import { getTodayString, getDateString, addDays } from '../utils/date';
 import { createToast, createModal } from './TerminalUI';
-import { renderHabitLogo, habitTextStyle, habitLogoText } from './habitLogo';
+import { renderHabitLogo, habitTextStyle, habitLogoText } from './appearance';
 
 const DAYS_BACK = 30;
 

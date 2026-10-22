@@ -14,13 +14,23 @@ export interface Reminder {
   enabled: boolean;
 }
 
+/**
+ * How a habit/routine name picks its text colour:
+ *   default — inherit the theme's text colour
+ *   auto    — derive it from the item's accent colour
+ *   custom  — use an explicit colour
+ */
+export type TextColorMode = 'default' | 'auto' | 'custom';
+
 export interface Habit {
   id: string;
   name: string;
   icon: string;
   color: string;
-  /** Optional override for the habit name's text colour. Empty/undefined = inherit from the theme. */
+  /** Optional override for the habit name's text colour. Only used when textColorMode is 'custom'. */
   textColor?: string;
+  /** Text colour strategy. Undefined is treated as 'default'. */
+  textColorMode?: TextColorMode;
   mode: HabitMode;
   target: number;
   unit?: string;
@@ -55,6 +65,10 @@ export interface Routine {
   name: string;
   icon: string;
   color: string;
+  /** Optional override for the routine name's text colour. Only used when textColorMode is 'custom'. */
+  textColor?: string;
+  /** Text colour strategy. Undefined is treated as 'default'. */
+  textColorMode?: TextColorMode;
   schedule: Schedule;
   habitIds: string[];
   createdAt: string;

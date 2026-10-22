@@ -7,6 +7,7 @@ import { createSettings } from './Settings';
 import { createTerminalPrompt, createToast, createModal } from './TerminalUI';
 import { createWidgetRail } from './Widgets';
 import { openHabitForm } from './HabitForm';
+import { createAppearancePicker } from './appearancePicker';
 import { formatDate } from '../utils/date';
 
 export class App {
@@ -274,17 +275,23 @@ export class App {
 
   private showRoutineForm(routine?: any) {
     const content = document.createElement('div'); content.className = 'routine-form';
+    const picker = createAppearancePicker({
+      icon: routine?.icon ?? '',
+      color: routine?.color ?? '#7aa2f7',
+      textColor: routine?.textColor,
+      textColorMode: routine?.textColorMode,
+    }, { colorLabel: 'Colour', defaultIcon: 'tabler:target' });
+
     content.innerHTML = `
       <div class="form-group"><label>Name</label><input type="text" id="r-name" value="${routine?.name||''}" required placeholder="e.g., Morning Routine"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Icon</label><input type="text" id="r-icon" value="${routine?.icon||'☀'}" maxlength="2"></div>
-        <div class="form-group"><label>Color</label><input type="color" id="r-color" value="${routine?.color||'#7aa2f7'}"></div>
-      </div>
+    `;
+    content.appendChild(picker.el);
+    content.insertAdjacentHTML('beforeend', `
       <div class="form-group"><label>Schedule</label><select id="r-sched"><option value="daily" ${routine?.schedule?.type==='daily'?'selected':''}>Daily</option><option value="weekdays" ${routine?.schedule?.type==='weekdays'?'selected':''}>Weekdays</option><option value="custom" ${routine?.schedule?.type==='custom'?'selected':''}>Custom</option></select></div>
       <div class="form-group" id="r-custom-days" style="display:${routine?.schedule?.type==='custom'?'block':'none'}"><label>Days</label><div class="day-checkboxes">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i)=>`<label><input type="checkbox" value="${i}" ${routine?.schedule?.days?.includes(i)?'checked':''}> ${d}</label>`).join('')}</div></div>
       <div class="form-group"><label>Habits</label><div id="r-habits" class="habit-checkboxes">${store.getState().habits.filter((h:any)=>!h.archivedAt).map(h=>`<label><input type="checkbox" value="${h.id}" ${routine?.habitIds?.includes(h.id)?'checked':''}> ${h.name}</label>`).join('')}</div></div>
       <div class="form-actions"><button class="btn btn-ghost" id="r-cancel">Cancel</button><button class="btn btn-primary" id="r-save">${routine?'Save':'Create'}</button></div>
-    `;
+    `);
     const modal = createModal(routine?'Edit Routine':'New Routine', content, () => {});
     content.querySelector('#r-sched')?.addEventListener('change', e => { (content.querySelector('#r-custom-days') as HTMLElement).style.display = (e.target as HTMLSelectElement).value==='custom'?'block':'none'; });
     content.querySelector('#r-cancel')?.addEventListener('click', () => document.querySelector('.modal-overlay')?.remove());
@@ -295,8 +302,9 @@ export class App {
       let schedule: any = { type: schedType };
       if (schedType === 'custom') { const days = Array.from(content.querySelectorAll('#r-custom-days input:checked')).map(cb => parseInt((cb as HTMLInputElement).value)); schedule.days = days; }
       const habitIds = Array.from(content.querySelectorAll('#r-habits input:checked')).map(cb => (cb as HTMLInputElement).value);
-      if (routine) { await store.updateRoutine({ ...routine, name, icon: (content.querySelector('#r-icon') as HTMLInputElement).value, color: (content.querySelector('#r-color') as HTMLInputElement).value, schedule, habitIds }); }
-      else { await store.createRoutine({ name, icon: (content.querySelector('#r-icon') as HTMLInputElement).value, color: (content.querySelector('#r-color') as HTMLInputElement).value, schedule, habitIds }); }
+      const appearance = picker.getValue();
+      if (routine) { await store.updateRoutine({ ...routine, name, ...appearance, schedule, habitIds }); }
+      else { await store.createRoutine({ name, ...appearance, schedule, habitIds }); }
       document.querySelector('.modal-overlay')?.remove();
       createToast(routine?'Routine updated':'Routine created', 'success');
     });

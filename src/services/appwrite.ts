@@ -128,7 +128,7 @@ class AppwriteService {
     return result.documents.map(this.mapHabit);
   }
 
-  mapHabit(doc: any): Habit { return { id: doc.$id, name: doc.name, icon: doc.icon, color: doc.color, textColor: doc.textColor || undefined, mode: doc.mode, target: doc.target, unit: doc.unit, schedule: JSON.parse(doc.schedule), reminders: JSON.parse(doc.reminders), routineId: doc.routineId, createdAt: doc.createdAt, archivedAt: doc.archivedAt, updatedAt: doc.updatedAt, order: doc.order }; }
+  mapHabit(doc: any): Habit { return { id: doc.$id, name: doc.name, icon: doc.icon, color: doc.color, textColor: doc.textColor || undefined, textColorMode: doc.textColorMode || undefined, mode: doc.mode, target: doc.target, unit: doc.unit, schedule: JSON.parse(doc.schedule), reminders: JSON.parse(doc.reminders), routineId: doc.routineId, createdAt: doc.createdAt, archivedAt: doc.archivedAt, updatedAt: doc.updatedAt, order: doc.order }; }
 
   async createCompletion(completion: Omit<Completion, 'id' | 'createdAt' | 'synced'>): Promise<Completion> {
     const user = await this.getCurrentUser(); const now = new Date().toISOString(); const { ID } = await import('appwrite');
@@ -156,7 +156,7 @@ class AppwriteService {
   async updateRoutine(routine: Routine): Promise<Routine> { const doc = { ...routine, updatedAt: new Date().toISOString(), schedule: JSON.stringify(routine.schedule), habitIds: JSON.stringify(routine.habitIds) }; const result = await this.databases.updateDocument(DATABASE_ID, COLLECTIONS.routines, routine.id, doc); return this.mapRoutine(result); }
   async deleteRoutine(routineId: string): Promise<void> { await this.databases.deleteDocument(DATABASE_ID, COLLECTIONS.routines, routineId); }
   async getRoutines(): Promise<Routine[]> { const user = await this.getCurrentUser(); const { Query } = await import('appwrite'); const result = await this.databases.listDocuments(DATABASE_ID, COLLECTIONS.routines, [Query.equal('userId', user.id), Query.orderAsc('order')]); return result.documents.map(this.mapRoutine); }
-  mapRoutine(doc: any): Routine { return { id: doc.$id, name: doc.name, icon: doc.icon, color: doc.color, schedule: JSON.parse(doc.schedule), habitIds: JSON.parse(doc.habitIds), createdAt: doc.createdAt, updatedAt: doc.updatedAt, order: doc.order }; }
+  mapRoutine(doc: any): Routine { return { id: doc.$id, name: doc.name, icon: doc.icon, color: doc.color, textColor: doc.textColor || undefined, textColorMode: doc.textColorMode || undefined, schedule: JSON.parse(doc.schedule), habitIds: JSON.parse(doc.habitIds), createdAt: doc.createdAt, updatedAt: doc.updatedAt, order: doc.order }; }
 
   async createTheme(theme: Omit<Theme, 'id'>): Promise<Theme> { const user = await this.getCurrentUser(); const { ID } = await import('appwrite'); const doc = { ...theme, userId: user.id, colors: JSON.stringify(theme.colors) }; const result = await this.databases.createDocument(DATABASE_ID, COLLECTIONS.themes, ID.unique(), doc, [{ type: 'read', userId: user.id }, { type: 'update', userId: user.id }, { type: 'delete', userId: user.id }]); return this.mapTheme(result); }
   async getThemes(): Promise<Theme[]> { const user = await this.getCurrentUser(); const { Query } = await import('appwrite'); const result = await this.databases.listDocuments(DATABASE_ID, COLLECTIONS.themes, [Query.equal('userId', user.id)]); return result.documents.map(this.mapTheme); }
