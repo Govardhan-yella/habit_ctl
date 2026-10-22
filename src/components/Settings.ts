@@ -39,27 +39,31 @@ export class SettingsComponent {
 
   private async write(patch: Partial<SyncConfig>): Promise<void> {
     this.writing++;
-    try { await store.setSyncConfig(patch); } finally {
+    try {
+      await store.setSyncConfig(patch);
+    } finally {
       this.writing--;
-      if (this.writing === 0 && this.pendingRender) {
-        const a = document.activeElement as HTMLElement | null;
-        if (a && this.c.contains(a)) { this.pendingRender = true; return; }
-        this.pendingRender = false;
-        this.render();
-      }
+    }
+    if (this.writing === 0 && this.pendingRender) {
+      const a = document.activeElement as HTMLElement | null;
+      if (a && this.c.contains(a)) { this.pendingRender = true; return; }
+      this.pendingRender = false;
+      this.render();
     }
   }
 
   private async writeSettings(patch: Partial<UserSettings>): Promise<void> {
     this.writing++;
-    try { await store.updateSettings(patch); } finally {
+    try {
+      await store.updateSettings(patch);
+    } finally {
       this.writing--;
-      if (this.writing === 0 && this.pendingRender) {
-        const a = document.activeElement as HTMLElement | null;
-        if (a && this.c.contains(a)) { this.pendingRender = true; return; }
-        this.pendingRender = false;
-        this.render();
-      }
+    }
+    if (this.writing === 0 && this.pendingRender) {
+      const a = document.activeElement as HTMLElement | null;
+      if (a && this.c.contains(a)) { this.pendingRender = true; return; }
+      this.pendingRender = false;
+      this.render();
     }
   }
 
