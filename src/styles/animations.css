@@ -1,0 +1,213 @@
+/* Smooth micro-animations for habit_ctl */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(122, 162, 247, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(122, 162, 247, 0);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+.habit-item.completed .habit-name {
+  transition: all 0.3s var(--ease);
+}
+
+.habit-streak {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.ring-fg {
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.nav-btn {
+  position: relative;
+}
+
+.nav-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  transition: width 0.3s var(--ease);
+}
+
+.nav-btn.active::after {
+  width: 60%;
+}
+
+/* Celebration styles */
+.celebration {
+  text-align: center;
+  padding: 20px;
+  animation: bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.celebration-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+.celebration-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 8px;
+  animation: fade-in-up 0.5s var(--ease) 0.2s both;
+}
+
+.celebration-message {
+  font-size: 13px;
+  color: var(--fg-muted);
+  animation: fade-in-up 0.5s var(--ease) 0.3s both;
+}
+
+.confetti-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Command palette */
+.command-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cp-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.cp-prompt {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.cp-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+}
+
+.cp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.cp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s var(--ease);
+}
+
+.cp-item:hover,
+.cp-item.active {
+  background: var(--bg);
+}
+
+.cp-group {
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  min-width: 60px;
+}
+
+.cp-label {
+  flex: 1;
+  font-size: 13px;
+  color: var(--fg);
+}

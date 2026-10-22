@@ -3,6 +3,7 @@ import { store } from './stores/appStore';
 import { initPwa } from './services/pwa';
 import { startReminderService } from './services/reminders';
 import './styles/main.css';
+import './styles/animations.css';
 
 // In dev there is no legitimate service worker; a stale one from a previous
 // production build will keep serving an old cached bundle. Remove it and reload once.

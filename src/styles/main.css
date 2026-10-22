@@ -841,13 +841,21 @@ pre {
   background: transparent;
   color: var(--fg);
   cursor: pointer;
-  transition: background 0.15s var(--ease), border-color 0.15s var(--ease),
-    color 0.15s var(--ease), transform 0.05s var(--ease);
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease),
+    color 0.2s var(--ease), transform 0.15s var(--ease), box-shadow 0.2s var(--ease);
   white-space: nowrap;
+  position: relative;
+  overflow: hidden;
 }
 
-.btn:active {
-  transform: translateY(1px);
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0px) scale(0.98);
+  transition: transform 0.05s var(--ease);
 }
 
 .btn-sm {
@@ -1166,14 +1174,18 @@ pre {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  animation: pop-in 0.18s var(--ease);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  animation: pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes pop-in {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translateY(12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -1364,14 +1376,14 @@ input[type='color'] {
   border: 1px solid var(--border);
   border-left-width: 3px;
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   font-size: 13px;
-  transform: translateX(120%);
+  transform: translateX(120%) scale(0.95);
   opacity: 0;
-  transition: transform 0.25s var(--ease), opacity 0.25s var(--ease);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s var(--ease);
 }
 .toast.show {
-  transform: translateX(0);
+  transform: translateX(0) scale(1);
   opacity: 1;
 }
 
@@ -1434,16 +1446,45 @@ input[type='color'] {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-secondary);
-  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease),
+    transform 0.2s var(--ease), box-shadow 0.25s var(--ease);
+  animation: slide-up-fade 0.3s var(--ease);
 }
 .habit-item:hover {
   border-color: var(--accent-muted);
+  transform: translateX(4px);
+  box-shadow: -2px 0 0 var(--accent-muted);
 }
 .habit-item.selected {
   border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-muted), 0 4px 16px rgba(122, 162, 247, 0.15);
 }
 .habit-item.completed {
   opacity: 0.85;
+  animation: complete-pulse 0.4s var(--ease);
+}
+
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes complete-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .habit-main {
