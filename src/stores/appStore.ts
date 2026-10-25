@@ -8,6 +8,7 @@ import { createProvider, snapshotFromState, mergeSnapshots, saveTombstones, addT
 import { FileProvider, supportsFileSystemAccess } from '../services/sync/file';
 import { playSound } from '../services/audio';
 import { showCelebration } from '../components/Celebration';
+import { nativeHaptic, nativeSuccess } from '../services/nativeBridge';
 
 type Listener = (state: AppState) => void;
 
@@ -257,7 +258,16 @@ class AppStore {
   private async persistSetting(s: Partial<UserSettings>): Promise<void> { const cur = this.getSettings(); const up = { ...cur, ...s }; this.settings = up; await saveSettings(up); if (this.state.user) this.setState({ user: { ...this.state.user, settings: up } }); else this.notify(); }
   async updateSettings(s: Partial<UserSettings>): Promise<void> { await this.persistSetting(s); if (s.themeId || 'matteMode' in s) this.applyTheme(s.themeId ? this.resolveTheme(s.themeId) : this.state.theme); if ('sync' in s || 'syncEnabled' in s) this.scheduleAutoSync(); }
   /** Fire a haptic tick when the setting is enabled and the device supports it. */
-  haptic(ms = 12): void { try { if (this.getSettings().hapticFeedback && typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(ms); } catch { /* unsupported */ } }
+  haptic(ms = 12): void {
+    try {
+      if (!this.getSettings().hapticFeedback) return;
+      try {
+        const m = (window as any).__habitctl_native_haptic;
+        if (typeof m === 'function') m(ms >= 20 ? 'heavy' : ms >= 15 ? 'medium' : 'light');
+      } catch {}
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(ms);
+    } catch { /* unsupported */ }
+  }
   defaultSettings(): UserSettings { return { themeId: DEFAULT_THEME_ID, syncEnabled: true, iCloudSync: false, animations: true, hapticFeedback: true, weekStartsOn: 0, dateFormat: 'YYYY-MM-DD', timeFormat: '24h', language: 'en', matteMode: false, passcodeEnabled: false, biometricEnabled: false, vacationMode: false }; }
 
   setView(v: AppState['view']): void { this.setState({ view: v }); }
@@ -313,19 +323,21 @@ class AppStore {
     
     // Delight: sounds + celebrations
     try { playSound(existing ? 'click' : 'complete'); } catch {}
+    try { this.haptic(existing ? 12 : 16); } catch {}
     
     if (!existing) {
+      try { const { nativeSuccess } = await import('../services/nativeBridge'); nativeSuccess(); } catch {}
       const st = this.getHabitStreak(habitId);
       if (st.current > 0 && st.current % 7 === 0) {
-        try { playSound('streak'); showCelebration({ title: `${st.current}-day streak!`, message: `You're on fire with ${h.name}. Keep it going!`, icon: '🔥', confetti: true }); } catch {}
+        try { playSound('streak'); this.haptic(20); showCelebration({ title: `${st.current}-day streak!`, message: `You're on fire with ${h.name}. Keep it going!`, icon: '🔥', confetti: true }); } catch {}
       }
-      if (st.current === 30) {
-        try { playSound('levelup'); showCelebration({ title: 'Level Up!', message: '30-day streak — legendary consistency.', icon: '⚡', confetti: true }); } catch {}
+      if (st.current === 30 || st.current === 100 || st.current === 365) {
+        try { playSound('levelup'); this.haptic(25); showCelebration({ title: 'Level Up!', message: `${st.current}-day streak — legendary consistency.`, icon: '⚡', confetti: true }); } catch {}
       }
       // perfect day?
       const tp = this.todayProgress();
       if (date === getTodayString() && tp.total > 0 && tp.done + 1 >= tp.total) {
-        try { playSound('perfect'); showCelebration({ title: 'Perfect Day!', message: 'Every scheduled habit completed today.', icon: '🌟', confetti: true }); } catch {}
+        try { playSound('perfect'); this.haptic(22); showCelebration({ title: 'Perfect Day!', message: 'Every scheduled habit completed today.', icon: '🌟', confetti: true }); } catch {}
       }
     }
     

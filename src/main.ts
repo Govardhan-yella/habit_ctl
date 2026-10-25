@@ -2,8 +2,12 @@ import { createApp } from './components/App';
 import { store } from './stores/appStore';
 import { initPwa } from './services/pwa';
 import { startReminderService } from './services/reminders';
+import { nativeHaptic } from './services/nativeBridge';
 import './styles/main.css';
 import './styles/animations.css';
+
+// Expose for native bridge usage
+(window as any).__habitctl_native_haptic = (style: string) => nativeHaptic(style as any);
 
 // In dev there is no legitimate service worker; a stale one from a previous
 // production build will keep serving an old cached bundle. Remove it and reload once.
